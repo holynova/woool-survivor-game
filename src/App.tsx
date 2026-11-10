@@ -8,21 +8,11 @@ import { bootPhaser } from './renderer';
 import { assetUrl } from './utils';
 
 function useGameState() {
-  return useSyncExternalStore(
+  useSyncExternalStore(
     cb => game.subscribe(cb),
-    () => ({
-      phase: game.phase,
-      clock: game.clock,
-      player: { ...game.player },
-      activeSkills: [...game.activeSkills],
-      activePassives: [...game.activePassives],
-      upgradeChoices: [...game.upgradeChoices],
-      chapterId: game.chapterId,
-      heroClass: game.heroClass,
-      bossSpawned: game.bossSpawned,
-      bossDefeated: game.bossDefeated
-    })
+    () => game.version
   );
+  return game;
 }
 
 export function App() {
@@ -168,44 +158,47 @@ export function App() {
       {/* 2. IN-GAME HUD OVERLAY (battle or level_up) */}
       {(state.phase === 'battle' || state.phase === 'level_up') && (
         <div className="hud-overlay">
-          {/* Top Info Bar */}
-          <div className="hud-top-bar">
-            <div className="top-badge">
-              <span className="label">地图</span>
-              <span className="val">{WOOWL_CHAPTERS[state.chapterId]?.name || '中州'}</span>
+          {/* Top Wrapper */}
+          <div className="hud-top-wrapper">
+            {/* Top Info Bar */}
+            <div className="hud-top-bar">
+              <div className="top-badge">
+                <span className="label">地图</span>
+                <span className="val">{WOOWL_CHAPTERS[state.chapterId]?.name || '中州'}</span>
+              </div>
+
+              <div className="top-badge">
+                <span className="label">时间</span>
+                <span className="val">{formatTime(state.clock)}</span>
+              </div>
+
+              <div className="top-badge">
+                <span className="label">等级</span>
+                <span className="val gold">Lv.{state.player.level}</span>
+              </div>
+
+              <div className="top-badge">
+                <span className="label">斩妖</span>
+                <span className="val crimson">{state.player.kills}</span>
+              </div>
+
+              <div className="top-badge">
+                <span className="label">金币</span>
+                <span className="val yellow">{state.player.gold}</span>
+              </div>
             </div>
 
-            <div className="top-badge">
-              <span className="label">时间</span>
-              <span className="val">{formatTime(state.clock)}</span>
-            </div>
-
-            <div className="top-badge">
-              <span className="label">等级</span>
-              <span className="val gold">Lv.{state.player.level}</span>
-            </div>
-
-            <div className="top-badge">
-              <span className="label">斩妖</span>
-              <span className="val crimson">{state.player.kills}</span>
-            </div>
-
-            <div className="top-badge">
-              <span className="label">金币</span>
-              <span className="val yellow">{state.player.gold}</span>
-            </div>
-          </div>
-
-          {/* Exp Bar */}
-          <div className="exp-bar-container">
-            <div
-              className="exp-bar-fill"
-              style={{
-                width: `${Math.min(100, (state.player.exp / state.player.maxExp) * 100)}%`
-              }}
-            />
-            <div className="exp-bar-text">
-              经验: {state.player.exp} / {state.player.maxExp}
+            {/* Exp Bar */}
+            <div className="exp-bar-container">
+              <div
+                className="exp-bar-fill"
+                style={{
+                  width: `${Math.min(100, (state.player.exp / state.player.maxExp) * 100)}%`
+                }}
+              />
+              <div className="exp-bar-text">
+                经验: {state.player.exp} / {state.player.maxExp}
+              </div>
             </div>
           </div>
 

@@ -77,6 +77,7 @@ export class GameEngine {
     iconId: number;
   }> = [];
 
+  version = 0;
   private nextEntityId = 1;
   private listeners = new Set<() => void>();
 
@@ -101,6 +102,7 @@ export class GameEngine {
   }
 
   emit() {
+    this.version++;
     this.listeners.forEach(fn => fn());
   }
 

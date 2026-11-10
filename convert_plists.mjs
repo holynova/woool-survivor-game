@@ -14,14 +14,16 @@ function parsePlist(content) {
     const frameMatch = dictStr.match(/<key>frame<\/key>\s*<string>\{\{(\d+),(\d+)\},\{(\d+),(\d+)\}\}<\/string>/);
     const sourceSizeMatch = dictStr.match(/<key>sourceSize<\/key>\s*<string>\{(\d+),(\d+)\}<\/string>/);
     const sourceColorRectMatch = dictStr.match(/<key>sourceColorRect<\/key>\s*<string>\{\{(\d+),(\d+)\},\{(\d+),(\d+)\}\}<\/string>/);
-    const rotated = dictStr.includes('<key>rotated</key>\s*<true/>') || dictStr.includes('<key>rotated</key><true/>');
+    const rotated = /<key>rotated<\/key>\s*<true\/>/.test(dictStr);
     if (frameMatch) {
+      const pw = parseInt(frameMatch[3]);
+      const ph = parseInt(frameMatch[4]);
       frames[key] = {
         frame: {
           x: parseInt(frameMatch[1]),
           y: parseInt(frameMatch[2]),
-          w: parseInt(frameMatch[3]),
-          h: parseInt(frameMatch[4])
+          w: rotated ? ph : pw,
+          h: rotated ? pw : ph
         },
         rotated,
         trimmed: true,
@@ -35,12 +37,12 @@ function parsePlist(content) {
           : {
               x: 0,
               y: 0,
-              w: parseInt(frameMatch[3]),
-              h: parseInt(frameMatch[4])
+              w: pw,
+              h: ph
             },
         sourceSize: sourceSizeMatch
           ? { w: parseInt(sourceSizeMatch[1]), h: parseInt(sourceSizeMatch[2]) }
-          : { w: parseInt(frameMatch[3]), h: parseInt(frameMatch[4]) }
+          : { w: pw, h: ph }
       };
     }
   }
