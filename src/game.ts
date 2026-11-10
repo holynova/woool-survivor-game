@@ -139,20 +139,20 @@ export class GameEngine {
 
     // Class specific initial stats
     if (heroClass === 'warrior') {
-      this.player.maxHp = 160;
-      this.player.hp = 160;
+      this.player.maxHp = 220;
+      this.player.hp = 220;
       this.player.speed = 220;
       // Start with Moon Blade (抱月刀)
       this.activeSkills.push({ id: 'moon_blade', level: 1, cdTimer: 0 });
     } else if (heroClass === 'wizard') {
-      this.player.maxHp = 90;
-      this.player.hp = 90;
+      this.player.maxHp = 140;
+      this.player.hp = 140;
       this.player.speed = 205;
       // Start with Dragon Purple Lightning (狂龙紫电)
       this.activeSkills.push({ id: 'dragon_purple_lightning', level: 1, cdTimer: 0 });
     } else {
-      this.player.maxHp = 120;
-      this.player.hp = 120;
+      this.player.maxHp = 180;
+      this.player.hp = 180;
       this.player.speed = 210;
       // Start with Enhanced Skeleton (强化骷髅术)
       this.activeSkills.push({ id: 'enhanced_skeleton', level: 1, cdTimer: 0 });
@@ -167,6 +167,7 @@ export class GameEngine {
     this.player.kills = 0;
     this.player.x = 1000;
     this.player.y = 800;
+    this.player.invulnerableTime = 1.0;
 
     this.emit();
   }
@@ -404,7 +405,7 @@ export class GameEngine {
       sound.play(def.soundKey);
       this.effects.push({
         id: this.nextEntityId++,
-        type: 'blade_arc',
+        type: 'dash',
         x: this.player.x,
         y: this.player.y,
         radius: 100
@@ -425,11 +426,31 @@ export class GameEngine {
       this.player.shieldUntil = this.clock + 5.0;
       this.effects.push({
         id: this.nextEntityId++,
-        type: 'shield',
+        type: 'diamond_body',
         x: this.player.x,
         y: this.player.y,
         radius: 60
       });
+      return true;
+    }
+
+    if (id === 'wind_shield') {
+      sound.play(def.soundKey);
+      this.player.shieldUntil = this.clock + 6.0;
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'wind_shield',
+        x: this.player.x,
+        y: this.player.y,
+        radius: finalArea
+      });
+      const nearby = this.monsters.filter(m => Math.hypot(m.x - this.player.x, m.y - this.player.y) <= finalArea);
+      for (const m of nearby) {
+        this.damageEnemy(m, finalDamage, false);
+        const angle = Math.atan2(m.y - this.player.y, m.x - this.player.x);
+        m.x += Math.cos(angle) * 60;
+        m.y += Math.sin(angle) * 60;
+      }
       return true;
     }
 
@@ -475,6 +496,12 @@ export class GameEngine {
           // Attack!
           this.damageEnemy(target, m.damage, true);
           sound.play(m.type === 'skeleton' ? 'skill_slash' : 'skill_fireball');
+          this.effects.push({
+            id: this.nextEntityId++,
+            type: m.type === 'skeleton' ? 'skeleton' : 'shinsu',
+            x: target.x,
+            y: target.y
+          });
           m.attackCd = m.type === 'skeleton' ? 0.75 : 1.2;
         }
       } else {
@@ -604,6 +631,7 @@ export class GameEngine {
     }
 
     this.player.hp -= finalDmg;
+    this.player.invulnerableTime = 0.2;
     sound.play('player_hurt', 0.4);
 
     if (this.player.hp <= 0) {

@@ -15,6 +15,12 @@ function useGameState() {
   return game;
 }
 
+const CLASS_HEAD_MAP: Record<HeroClass, string> = {
+  warrior: 'head_1.png',
+  wizard: 'head_2.png',
+  taoist: 'head_3.png'
+};
+
 export function App() {
   const state = useGameState();
   const [selectedClass, setSelectedClass] = useState<HeroClass>('wizard');
@@ -37,6 +43,7 @@ export function App() {
   };
 
   const handleSelectUpgrade = (choice: typeof game.upgradeChoices[0]) => {
+    sound.play('ui_click');
     game.selectUpgrade(choice);
   };
 
@@ -47,9 +54,9 @@ export function App() {
 
   return (
     <div className="game-container">
-      {/* 1. LOBBY SCREEN */}
+      {/* 1. LOBBY SCREEN (AUTHENTIC WOOOL STYLE) */}
       {state.phase === 'lobby' && (
-        <div className="lobby-overlay">
+        <div className="lobby-overlay" style={{ backgroundImage: `url(${assetUrl('assets/woool/role/bg.jpg')})` }}>
           <div className="lobby-panel">
             <div className="lobby-header">
               <img src={assetUrl('assets/woool/logo.png')} alt="传奇世界" className="woool-logo" />
@@ -67,15 +74,17 @@ export function App() {
                   setSelectedClass('warrior');
                 }}
               >
-                <div className="class-icon-wrapper">
-                  <img src={assetUrl('assets/woool/role/job_1.png')} alt="战士" className="class-emblem" />
+                <div className="class-head-box">
+                  <img src={assetUrl('assets/woool/ui/role_head_bg.png')} className="head-frame" alt="" />
+                  <img src={assetUrl('assets/woool/ui/head_1.png')} className="head-avatar" alt="战士" />
+                  <img src={assetUrl('assets/woool/role/job_1.png')} className="class-job-badge" alt="战士" />
                 </div>
                 <div className="class-name">战 士</div>
                 <div className="class-tag">铜皮铁骨 · 贴身近战</div>
                 <div className="class-desc">
-                  初始气血 160<br />
+                  初始气血 220<br />
                   招牌绝技: <strong>抱月刀</strong><br />
-                  360度大范围回旋弧月刀气，推开敌群
+                  360度大范围回旋弧月刀气，横扫四面合围敌群
                 </div>
               </div>
 
@@ -87,15 +96,17 @@ export function App() {
                   setSelectedClass('wizard');
                 }}
               >
-                <div className="class-icon-wrapper">
-                  <img src={assetUrl('assets/woool/role/job_2.png')} alt="法师" className="class-emblem" />
+                <div className="class-head-box">
+                  <img src={assetUrl('assets/woool/ui/role_head_bg.png')} className="head-frame" alt="" />
+                  <img src={assetUrl('assets/woool/ui/head_2.png')} className="head-avatar" alt="法师" />
+                  <img src={assetUrl('assets/woool/role/job_2.png')} className="class-job-badge" alt="法师" />
                 </div>
                 <div className="class-name">法 师</div>
                 <div className="class-tag">紫雷天火 · 极光毁灭</div>
                 <div className="class-desc">
-                  初始气血 90<br />
+                  初始气血 140<br />
                   招牌绝技: <strong>狂龙紫电</strong><br />
-                  引九霄神雷连环轰顶，弹跳连锁雷劫
+                  引九天紫霄狂雷贯穿苍穹，连锁电弧弹射轰杀
                 </div>
               </div>
 
@@ -107,15 +118,17 @@ export function App() {
                   setSelectedClass('taoist');
                 }}
               >
-                <div className="class-icon-wrapper">
-                  <img src={assetUrl('assets/woool/role/job_3.png')} alt="道士" className="class-emblem" />
+                <div className="class-head-box">
+                  <img src={assetUrl('assets/woool/ui/role_head_bg.png')} className="head-frame" alt="" />
+                  <img src={assetUrl('assets/woool/ui/head_3.png')} className="head-avatar" alt="道士" />
+                  <img src={assetUrl('assets/woool/role/job_3.png')} className="class-job-badge" alt="道士" />
                 </div>
                 <div className="class-name">道 士</div>
                 <div className="class-tag">双斧骷髅 · 幽冥符咒</div>
                 <div className="class-desc">
-                  初始气血 120<br />
+                  初始气血 180<br />
                   招牌绝技: <strong>强化骷髅术</strong><br />
-                  召唤手持双大板斧的护法骷髅追砍群魔
+                  召唤手持双大板斧的护法骷髅疯狗追杀群妖
                 </div>
               </div>
             </div>
@@ -144,8 +157,8 @@ export function App() {
 
             {/* Start Button */}
             <div className="lobby-actions">
-              <button className="start-btn" onClick={handleStartGame}>
-                进入中州 · 开启远征
+              <button className="start-btn-woool" onClick={handleStartGame}>
+                <span className="btn-text">进入中州 · 开启远征</span>
               </button>
               <div className="controls-hint">
                 操作提示: 使用键盘 [W A S D] 或 [方向键] 移动，支持触屏鼠标拖动滑行，技能全部自动释放
@@ -155,12 +168,35 @@ export function App() {
         </div>
       )}
 
-      {/* 2. IN-GAME HUD OVERLAY (battle or level_up) */}
+      {/* 2. IN-GAME HUD OVERLAY (AUTHENTIC WOOOL HUD) */}
       {(state.phase === 'battle' || state.phase === 'level_up') && (
         <div className="hud-overlay">
           {/* Top Wrapper */}
           <div className="hud-top-wrapper">
-            {/* Top Info Bar */}
+            {/* Top Left Character Status */}
+            <div className="hud-player-badge">
+              <div className="role-head-container">
+                <img src={assetUrl('assets/woool/ui/role_head_bg.png')} className="role-head-frame" alt="" />
+                <img src={assetUrl(`assets/woool/ui/${CLASS_HEAD_MAP[state.heroClass] || 'head_2.png'}`)} className="role-avatar" alt="" />
+              </div>
+              <div className="role-info-container">
+                <div className="role-name-row">
+                  <span className="role-job-name">{state.heroClass === 'warrior' ? '战士' : state.heroClass === 'wizard' ? '法师' : '道士'}</span>
+                  <span className="role-level">Lv.{state.player.level}</span>
+                </div>
+                <div className="role-hp-row">
+                  <div className="role-hp-bar">
+                    <div
+                      className="role-hp-fill"
+                      style={{ width: `${Math.max(0, (state.player.hp / state.player.maxHp) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="role-hp-text">{Math.ceil(state.player.hp)} / {state.player.maxHp}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Stats Bar */}
             <div className="hud-top-bar">
               <div className="top-badge">
                 <span className="label">地图</span>
@@ -170,11 +206,6 @@ export function App() {
               <div className="top-badge">
                 <span className="label">时间</span>
                 <span className="val">{formatTime(state.clock)}</span>
-              </div>
-
-              <div className="top-badge">
-                <span className="label">等级</span>
-                <span className="val gold">Lv.{state.player.level}</span>
               </div>
 
               <div className="top-badge">
@@ -188,7 +219,7 @@ export function App() {
               </div>
             </div>
 
-            {/* Exp Bar */}
+            {/* Experience Bar (Top Flush) */}
             <div className="exp-bar-container">
               <div
                 className="exp-bar-fill"
@@ -202,126 +233,126 @@ export function App() {
             </div>
           </div>
 
-          {/* Bottom HUD Bar */}
-          <div className="hud-bottom-bar">
-            {/* Health / Mana Orbs */}
-            <div className="orbs-container">
-              <div className="orb hp-orb">
-                <div
-                  className="orb-fill hp-fill"
-                  style={{
-                    height: `${Math.max(0, (state.player.hp / state.player.maxHp) * 100)}%`
-                  }}
-                />
-                <div className="orb-text">
-                  气血<br />
-                  {Math.ceil(state.player.hp)} / {state.player.maxHp}
-                </div>
-              </div>
+          {/* Authentic Woool Bottom Bar */}
+          <div className="hud-bottom-container">
+            <div className="classic-woool-bottom-bar">
+              <img src={assetUrl('assets/woool/ui/main_bottom.png')} className="bottom-bar-bg" alt="" />
 
-              <div className="orb mp-orb">
-                <div
-                  className="orb-fill mp-fill"
-                  style={{
-                    height: `${Math.max(0, (state.player.mp / state.player.maxMp) * 100)}%`
-                  }}
-                />
-                <div className="orb-text">
-                  内力<br />
-                  {Math.ceil(state.player.mp)} / {state.player.maxMp}
-                </div>
-              </div>
-            </div>
-
-            {/* Active Skills Bar */}
-            <div className="slots-panel">
-              <div className="slots-header">参悟绝学 ({state.activeSkills.length}/5)</div>
-              <div className="slots-list">
-                {state.activeSkills.map(s => {
-                  const def = WOOWL_SKILLS[s.id];
-                  if (!def) return null;
-                  return (
-                    <div key={s.id} className="skill-slot-item" title={`${def.name} Lv.${s.level}`}>
-                      <img
-                        src={assetUrl(`assets/woool/skills/${def.iconId}.png`)}
-                        alt={def.name}
-                        className="skill-slot-icon"
-                      />
-                      <span className="skill-level-badge">Lv.{s.level}</span>
-                    </div>
-                  );
-                })}
-                {Array.from({ length: Math.max(0, 5 - state.activeSkills.length) }).map((_, i) => (
-                  <div key={`empty_s_${i}`} className="skill-slot-item empty">
-                    <span className="empty-text">+</span>
+              {/* Iconic Taiji Dragon Orb (Left Half HP Red, Right Half MP Blue) */}
+              <div className="woool-taiji-orb">
+                {/* Left HP Crescent */}
+                <div className="taiji-crescent crescent-hp" title={`气血: ${Math.ceil(state.player.hp)} / ${state.player.maxHp}`}>
+                  <div
+                    className="crescent-fill"
+                    style={{ height: `${Math.max(0, Math.min(100, (state.player.hp / state.player.maxHp) * 100))}%` }}
+                  >
+                    <img src={assetUrl('assets/woool/ui/hp_progress.png')} className="crescent-img" alt="HP" />
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            {/* Active Passives Bar */}
-            <div className="slots-panel passives-panel">
-              <div className="slots-header">护体宝物 ({state.activePassives.length}/6)</div>
-              <div className="slots-list">
-                {state.activePassives.map(p => {
-                  const def = WOOWL_PASSIVES[p.id];
-                  if (!def) return null;
-                  return (
-                    <div key={p.id} className="skill-slot-item passive" title={`${def.name} Lv.${p.level}`}>
-                      <img
-                        src={assetUrl(`assets/woool/skills/${def.iconId}.png`)}
-                        alt={def.name}
-                        className="skill-slot-icon"
-                      />
-                      <span className="skill-level-badge">Lv.{p.level}</span>
-                    </div>
-                  );
-                })}
-                {Array.from({ length: Math.max(0, 6 - state.activePassives.length) }).map((_, i) => (
-                  <div key={`empty_p_${i}`} className="skill-slot-item empty">
-                    <span className="empty-text">+</span>
+                {/* Right MP Crescent */}
+                <div className="taiji-crescent crescent-mp" title={`内力: ${Math.ceil(state.player.mp)} / ${state.player.maxMp}`}>
+                  <div
+                    className="crescent-fill"
+                    style={{ height: `${Math.max(0, Math.min(100, (state.player.mp / state.player.maxMp) * 100))}%` }}
+                  >
+                    <img src={assetUrl('assets/woool/ui/mp_progress.png')} className="crescent-img" alt="MP" />
                   </div>
-                ))}
+                </div>
+
+                {/* Value Text Overlay */}
+                <div className="taiji-label-hp">{Math.ceil(state.player.hp)}</div>
+                <div className="taiji-label-mp">{Math.ceil(state.player.mp)}</div>
+              </div>
+
+              {/* Center Panel: Active Skills (Row 1) & Passives / Equipment (Row 2) */}
+              <div className="woool-center-slots-panel">
+                {/* Row 1: 5 Skill Slots */}
+                <div className="woool-slot-row skills-row">
+                  {state.activeSkills.map((s, idx) => {
+                    const def = WOOWL_SKILLS[s.id];
+                    if (!def) return null;
+                    return (
+                      <div key={s.id} className="woool-slot-box" title={`${def.name} Lv.${s.level}`}>
+                        <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
+                        <img src={assetUrl(`assets/woool/skills/${def.iconId}.png`)} className="slot-icon" alt={def.name} />
+                        <span className="slot-badge">Lv.{s.level}</span>
+                        <span className="slot-hotkey">{idx + 1}</span>
+                      </div>
+                    );
+                  })}
+                  {Array.from({ length: Math.max(0, 5 - state.activeSkills.length) }).map((_, i) => (
+                    <div key={`empty_s_${i}`} className="woool-slot-box empty">
+                      <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
+                      <span className="slot-hotkey">{state.activeSkills.length + i + 1}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Row 2: 6 Passive / Equipment Slots */}
+                <div className="woool-slot-row passives-row">
+                  {state.activePassives.map(p => {
+                    const def = WOOWL_PASSIVES[p.id];
+                    if (!def) return null;
+                    const iconPath = def.iconType === 'item' || def.iconId > 100000
+                      ? `assets/woool/items/${def.iconId}.png`
+                      : `assets/woool/skills/${def.iconId}.png`;
+                    return (
+                      <div key={p.id} className="woool-slot-box passive" title={`${def.name} Lv.${p.level}`}>
+                        <img src={assetUrl('assets/woool/ui/equip_bg.png')} className="slot-frame" alt="" />
+                        <img src={assetUrl(iconPath)} className="slot-icon item-icon" alt={def.name} />
+                        <span className="slot-badge">Lv.{p.level}</span>
+                      </div>
+                    );
+                  })}
+                  {Array.from({ length: Math.max(0, 6 - state.activePassives.length) }).map((_, i) => (
+                    <div key={`empty_p_${i}`} className="woool-slot-box empty passive">
+                      <img src={assetUrl('assets/woool/ui/equip_bg.png')} className="slot-frame" alt="" />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 3. LEVEL UP MODAL */}
+      {/* 3. LEVEL UP MODAL (AUTHENTIC WOOOL STYLE) */}
       {state.phase === 'level_up' && (
         <div className="modal-backdrop">
-          <div className="upgrade-dialog">
-            <div className="upgrade-header">
-              <div className="upgrade-title">传 世 参 悟 · 机 缘 突 破</div>
-              <div className="upgrade-desc">
-                恭贺宗师升级至 Lv.{state.player.level}，请从以下三种传世秘籍中选择一项领悟
+          <div className="upgrade-dialog-woool">
+            <div className="dialog-title-banner">
+              <div className="title-text">传 世 参 悟 · 境 界 突 破</div>
+              <div className="title-sub">
+                恭贺宗师升级至 Lv.{state.player.level}，请从以下三种传世机缘中选择一项领悟
               </div>
             </div>
 
-            <div className="upgrade-cards">
-              {state.upgradeChoices.map((choice, idx) => (
-                <div
-                  key={`${choice.id}_${idx}`}
-                  className="upgrade-card"
-                  onClick={() => handleSelectUpgrade(choice)}
-                >
-                  <div className="upgrade-icon-box">
-                    <img
-                      src={assetUrl(`assets/woool/skills/${choice.iconId}.png`)}
-                      alt={choice.title}
-                      className="upgrade-icon"
-                    />
-                    <span className={`upgrade-tag ${choice.isNew ? 'new' : 'up'}`}>
-                      {choice.isNew ? '初次习得' : '境界提升'}
-                    </span>
+            <div className="upgrade-cards-container">
+              {state.upgradeChoices.map((choice, idx) => {
+                const choiceIconPath = choice.type === 'passive' || choice.iconId > 100000
+                  ? `assets/woool/items/${choice.iconId}.png`
+                  : `assets/woool/skills/${choice.iconId}.png`;
+                return (
+                  <div
+                    key={`${choice.id}_${idx}`}
+                    className="woool-upgrade-card"
+                    onClick={() => handleSelectUpgrade(choice)}
+                  >
+                    <div className="card-slot-box">
+                      <img src={assetUrl('assets/woool/ui/item_bg.png')} className="card-item-bg" alt="" />
+                      <img src={assetUrl(choiceIconPath)} className="card-icon" alt={choice.title} />
+                      <span className={`card-type-tag ${choice.isNew ? 'tag-new' : 'tag-upgrade'}`}>
+                        {choice.isNew ? '初次习得' : '境界突破'}
+                      </span>
+                    </div>
+                    <div className="card-body">
+                      <div className="card-heading">{choice.title}</div>
+                      <div className="card-detail">{choice.description}</div>
+                    </div>
                   </div>
-                  <div className="upgrade-card-info">
-                    <div className="upgrade-card-title">{choice.title}</div>
-                    <div className="upgrade-card-text">{choice.description}</div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -350,8 +381,9 @@ export function App() {
                 <span className="val gold">Lv.{state.player.level}</span>
               </div>
             </div>
-            <button className="confirm-btn" onClick={handleReturnLobby}>
-              重整旗鼓 · 重返中州
+
+            <button className="start-btn-woool" onClick={handleReturnLobby}>
+              <span className="btn-text">重 聚 中 州</span>
             </button>
           </div>
         </div>
@@ -360,31 +392,32 @@ export function App() {
       {/* 5. VICTORY MODAL */}
       {state.phase === 'victory' && (
         <div className="modal-backdrop">
-          <div className="result-dialog victory">
-            <div className="result-title victory">荡 平 妖 邪 · 威 震 传 世</div>
+          <div className="result-dialog">
+            <div className="result-title victory">中 州 凯 旋 · 威 震 天 下</div>
             <div className="result-desc">
-              恭贺大侠成功诛灭镇守妖王，名垂落霞中州史册！
+              恭喜您成功荡平魔窟，斩杀关底魔尊！名震玛法大陆！
             </div>
             <div className="result-stats">
               <div className="result-row">
-                <span>通关耗时:</span>
+                <span>通关用时:</span>
                 <span className="val">{formatTime(state.clock)}</span>
               </div>
               <div className="result-row">
-                <span>荡平群妖:</span>
+                <span>总计斩妖:</span>
                 <span className="val crimson">{state.player.kills} 尊</span>
               </div>
               <div className="result-row">
-                <span>缴获黄金:</span>
+                <span>缴获金币:</span>
                 <span className="val yellow">{state.player.gold} 两</span>
               </div>
               <div className="result-row">
-                <span>最终大境:</span>
+                <span>终极境界:</span>
                 <span className="val gold">Lv.{state.player.level}</span>
               </div>
             </div>
-            <button className="confirm-btn gold-btn" onClick={handleReturnLobby}>
-              凯旋归朝 · 留名青史
+
+            <button className="start-btn-woool" onClick={handleReturnLobby}>
+              <span className="btn-text">班 师 回 朝</span>
             </button>
           </div>
         </div>

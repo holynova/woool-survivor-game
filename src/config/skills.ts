@@ -240,48 +240,54 @@ export const WOOWL_PASSIVES: Record<string, PassiveDefinition> = {
   sacred_stone: {
     id: 'sacred_stone',
     name: '传世神兵玄晶',
-    iconId: 1001,
-    desc: '淬炼上古玄铁精魄，提升所有招式技能威力与破坏力。',
+    iconId: 2010210,
+    iconType: 'item',
+    desc: '淬炼上古黑水晶戒指精魄，提升所有招式技能威力与破坏力。',
     maxLevel: 4,
     effect: { damageMod: 0.15 }
   },
   wind_boots: {
     id: 'wind_boots',
     name: '风雷神行步',
-    iconId: 1005,
-    desc: '身若游龙，穿梭于千军万马，大幅提升移动速度。',
+    iconId: 2030410,
+    iconType: 'item',
+    desc: '装备传世鹿皮战靴，身若游龙，穿梭于千军万马，大幅提升移动速度。',
     maxLevel: 4,
     effect: { speedMod: 0.15 }
   },
   snow_lotus: {
     id: 'snow_lotus',
     name: '天山雪莲玉髓',
-    iconId: 3003,
-    desc: '西域雪山万年奇珍，大幅增加生命上限，并赋予源源不断的自然回血能力。',
+    iconId: 2030310,
+    iconType: 'item',
+    desc: '佩戴凤凰项链秘宝，大幅增加生命上限，并赋予源源不断的自然回血能力。',
     maxLevel: 4,
     effect: { hpMod: 0.2, hpRegen: 2 }
   },
   abyss_orb: {
     id: 'abyss_orb',
     name: '深渊魔晶珠',
-    iconId: 2008,
-    desc: '引聚天地灵气波纹，扩大所有技能的打击范围与影响范围。',
+    iconId: 2020210,
+    iconType: 'item',
+    desc: '镶嵌魔眼魔晶法戒，引聚天地灵气波纹，扩大所有技能的打击范围与影响范围。',
     maxLevel: 4,
     effect: { areaMod: 0.2 }
   },
   taichi_pill: {
     id: 'taichi_pill',
     name: '太极洗髓金丹',
-    iconId: 3010,
-    desc: '打通奇经八脉，气血流转神速，缩短所有技能招式冷却间隔。',
+    iconId: 2030210,
+    iconType: 'item',
+    desc: '通灵珍珠法戒之灵力，打通奇经八脉，气血流转神速，缩短所有招式冷却间隔。',
     maxLevel: 4,
     effect: { cooldownMod: -0.12 }
   },
   gravity_magnet: {
     id: 'gravity_magnet',
     name: '玛法乾坤引力石',
-    iconId: 1009,
-    desc: '内蕴乾坤磁场，大幅扩大战利品、金币与灵力结晶的磁吸摄取距离。',
+    iconId: 2030610,
+    iconType: 'item',
+    desc: '佩戴玛法金银手镯，内蕴乾坤磁场，大幅扩大战利品、金币与灵力结晶的磁吸距离。',
     maxLevel: 4,
     effect: { pickupRangeMod: 0.4 }
   }

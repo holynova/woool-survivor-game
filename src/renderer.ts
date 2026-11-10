@@ -45,7 +45,7 @@ export class BattleScene extends Phaser.Scene {
   private bgTile!: Phaser.GameObjects.TileSprite;
   private playerSprite!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Graphics;
-  private playerShieldGfx!: Phaser.GameObjects.Graphics;
+  private playerShieldSprite!: Phaser.GameObjects.Sprite;
 
   private monsterSprites = new Map<number, Phaser.GameObjects.Sprite>();
   private monsterPool: Phaser.GameObjects.Sprite[] = [];
@@ -99,6 +99,18 @@ export class BattleScene extends Phaser.Scene {
 
     // 4. Effects
     this.load.atlas('level_up', assetUrl('assets/woool/effects/level_up@0.png'), assetUrl('assets/woool/effects/level_up@0.json'));
+    this.load.atlas('fx_2010', assetUrl('assets/woool/skills_fx/s_2010@0.png'), assetUrl('assets/woool/skills_fx/s_2010@0.json'));
+    this.load.atlas('fx_1004', assetUrl('assets/woool/skills_fx/s_1004@0.png'), assetUrl('assets/woool/skills_fx/s_1004@0.json'));
+    this.load.atlas('fx_2011', assetUrl('assets/woool/skills_fx/s_2011@0.png'), assetUrl('assets/woool/skills_fx/s_2011@0.json'));
+    this.load.atlas('fx_2003', assetUrl('assets/woool/skills_fx/s_2003@0.png'), assetUrl('assets/woool/skills_fx/s_2003@0.json'));
+    this.load.atlas('fx_1006', assetUrl('assets/woool/skills_fx/s_1006@0.png'), assetUrl('assets/woool/skills_fx/s_1006@0.json'));
+    this.load.atlas('fx_3011', assetUrl('assets/woool/skills_fx/s_3011@0.png'), assetUrl('assets/woool/skills_fx/s_3011@0.json'));
+    this.load.atlas('fx_3004', assetUrl('assets/woool/skills_fx/s_3004@0.png'), assetUrl('assets/woool/skills_fx/s_3004@0.json'));
+    this.load.atlas('fx_1008', assetUrl('assets/woool/skills_fx/s_1008@0.png'), assetUrl('assets/woool/skills_fx/s_1008@0.json'));
+    this.load.atlas('fx_2009', assetUrl('assets/woool/skills_fx/s_2009@0.png'), assetUrl('assets/woool/skills_fx/s_2009@0.json'));
+    this.load.atlas('fx_3007', assetUrl('assets/woool/skills_fx/s_3007@0.png'), assetUrl('assets/woool/skills_fx/s_3007@0.json'));
+    this.load.atlas('fx_3012', assetUrl('assets/woool/skills_fx/s_3012@0.png'), assetUrl('assets/woool/skills_fx/s_3012@0.json'));
+    this.load.atlas('fx_1010', assetUrl('assets/woool/skills_fx/s_1010@0.png'), assetUrl('assets/woool/skills_fx/s_1010@0.json'));
   }
 
   create() {
@@ -118,7 +130,12 @@ export class BattleScene extends Phaser.Scene {
     this.playerShadow = this.add.graphics().setDepth(5);
     this.fxGraphics = this.add.graphics().setDepth(2000);
     this.uiGraphics = this.add.graphics().setDepth(3000);
-    this.playerShieldGfx = this.add.graphics().setDepth(2001);
+
+    // Player Shield Sprite
+    this.playerShieldSprite = this.add.sprite(game.player.x, game.player.y, 'fx_1008');
+    this.playerShieldSprite.setOrigin(0.5, 0.5);
+    this.playerShieldSprite.setDepth(2001);
+    this.playerShieldSprite.setVisible(false);
 
     // Player Sprite
     this.currentHeroClass = game.heroClass;
@@ -196,6 +213,39 @@ export class BattleScene extends Phaser.Scene {
         frameRate: 18,
         repeat: 0
       });
+    }
+
+    // Register Authentic Woool Skill Animations
+    const skillAnimConfigs = [
+      { key: 'fx_lightning_anim', atlas: 'fx_2010', prefix: '2010/hit', fps: 18 },
+      { key: 'fx_blade_arc_anim', atlas: 'fx_1004', prefix: '1004/attack', fps: 24 },
+      { key: 'fx_meteor_anim', atlas: 'fx_2011', prefix: '2011/hit', fps: 20 },
+      { key: 'fx_hell_thunder_anim', atlas: 'fx_2003', prefix: '2003/hit', fps: 16 },
+      { key: 'fx_fire_slash_anim', atlas: 'fx_1006', prefix: '1006/attack', fps: 24 },
+      { key: 'fx_talisman_fly_anim', atlas: 'fx_3011', prefix: '3011/track', fps: 12, repeat: -1 },
+      { key: 'fx_talisman_hit_anim', atlas: 'fx_3011', prefix: '3011/hit', fps: 18 },
+      { key: 'fx_poison_anim', atlas: 'fx_3004', prefix: '3004/hit', fps: 14 },
+      { key: 'fx_diamond_body_anim', atlas: 'fx_1008', prefix: '1008/loop', fps: 14, repeat: -1 },
+      { key: 'fx_wind_shield_anim', atlas: 'fx_2009', prefix: '2009/loop', fps: 14, repeat: -1 },
+      { key: 'fx_shinsu_anim', atlas: 'fx_3007', prefix: '3007/hit', fps: 18 },
+      { key: 'fx_skeleton_anim', atlas: 'fx_3012', prefix: '3012/hit', fps: 16 },
+      { key: 'fx_dash_anim', atlas: 'fx_1010', prefix: '1010/attack', fps: 20 }
+    ];
+
+    for (const cfg of skillAnimConfigs) {
+      if (this.textures.exists(cfg.atlas) && !this.anims.exists(cfg.key)) {
+        const frameNames = this.textures.get(cfg.atlas).getFrameNames()
+          .filter(f => f.startsWith(cfg.prefix))
+          .sort();
+        if (frameNames.length > 0) {
+          this.anims.create({
+            key: cfg.key,
+            frames: frameNames.map(f => ({ key: cfg.atlas, frame: f })),
+            frameRate: cfg.fps,
+            repeat: cfg.repeat !== undefined ? cfg.repeat : 0
+          });
+        }
+      }
     }
   }
 
@@ -286,13 +336,17 @@ export class BattleScene extends Phaser.Scene {
     this.playerShadow.fillStyle(0x000000, 0.4);
     this.playerShadow.fillEllipse(game.player.x, game.player.y + 40, 50, 20);
 
-    // Golden Shield (Diamond Body)
-    this.playerShieldGfx.clear();
+    // Shield Aura Sprite (Diamond Body / Wind Shield)
     if (game.clock < game.player.shieldUntil) {
-      this.playerShieldGfx.lineStyle(3, 0xffd700, 0.85);
-      this.playerShieldGfx.strokeCircle(game.player.x, game.player.y, 45);
-      this.playerShieldGfx.lineStyle(1.5, 0xffffff, 0.6);
-      this.playerShieldGfx.strokeCircle(game.player.x, game.player.y, 42);
+      this.playerShieldSprite.setVisible(true);
+      this.playerShieldSprite.setPosition(game.player.x, game.player.y);
+      this.playerShieldSprite.setDepth(game.player.y + 1);
+      const shieldAnim = game.heroClass === 'wizard' ? 'fx_wind_shield_anim' : 'fx_diamond_body_anim';
+      if (this.anims.exists(shieldAnim) && (!this.playerShieldSprite.anims.isPlaying || this.playerShieldSprite.anims.currentAnim?.key !== shieldAnim)) {
+        this.playerShieldSprite.play(shieldAnim);
+      }
+    } else {
+      this.playerShieldSprite.setVisible(false);
     }
   }
 
@@ -377,180 +431,112 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private syncEffects(dt: number) {
-    // 1. Take newly generated engine effects
+  private syncEffects(_dt: number) {
+    // Take newly generated engine effects and play authentic Woool sprite animations
     const newEffects = game.takeEffects();
     for (const e of newEffects) {
       if (e.type === 'level_up') {
-        // Spawn authentic Woool golden beam sprite
         if (this.anims.exists('fx_level_up_anim')) {
-          const fxSprite = this.add.sprite(e.x, e.y - 40, 'level_up');
-          fxSprite.setDepth(e.y + 100);
-          fxSprite.setScale(1.2);
-          fxSprite.play('fx_level_up_anim');
-          fxSprite.on('animationcomplete', () => fxSprite.destroy());
+          const fx = this.add.sprite(e.x, e.y - 40, 'level_up');
+          fx.setDepth(e.y + 100);
+          fx.setScale(1.2);
+          fx.play('fx_level_up_anim');
+          fx.on('animationcomplete', () => fx.destroy());
         }
-      } else {
-        this.activeFxList.push({
-          type: e.type,
-          x: e.x,
-          y: e.y,
-          targetX: e.targetX,
-          targetY: e.targetY,
-          radius: e.radius || 80,
-          color: e.color,
-          life: 0.35,
-          maxLife: 0.35
-        });
+      } else if (e.type === 'lightning') {
+        // 狂龙紫电: Authentic Woool purple lightning
+        if (this.anims.exists('fx_lightning_anim')) {
+          const fx = this.add.sprite(e.x, e.y - 50, 'fx_2010');
+          fx.setDepth(e.y + 200);
+          fx.setScale(1.1);
+          fx.play('fx_lightning_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'blade_arc') {
+        // 抱月刀: Authentic Woool 360 crescent blade sweep
+        if (this.anims.exists('fx_blade_arc_anim')) {
+          const fx = this.add.sprite(this.playerSprite.x, this.playerSprite.y, 'fx_1004');
+          fx.setDepth(this.playerSprite.y + 15);
+          fx.setScale(1.15);
+          fx.play('fx_blade_arc_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'meteor') {
+        // 流星火雨: Authentic Woool fiery meteor explosion
+        if (this.anims.exists('fx_meteor_anim')) {
+          const fx = this.add.sprite(e.x, e.y - 25, 'fx_2011');
+          fx.setDepth(e.y + 40);
+          fx.setScale(1.0);
+          fx.play('fx_meteor_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'hell_thunder') {
+        // 地狱雷光: Authentic Woool electric burst ring
+        if (this.anims.exists('fx_hell_thunder_anim')) {
+          const fx = this.add.sprite(this.playerSprite.x, this.playerSprite.y, 'fx_2003');
+          fx.setDepth(this.playerSprite.y + 15);
+          fx.setScale(1.2);
+          fx.play('fx_hell_thunder_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'fire_slash') {
+        // 烈火剑法: Authentic Woool fire blade explosion
+        if (this.anims.exists('fx_fire_slash_anim')) {
+          const fx = this.add.sprite(e.x, e.y, 'fx_1006');
+          fx.setDepth(e.y + 30);
+          fx.setScale(1.05);
+          fx.play('fx_fire_slash_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'talisman') {
+        // 幽冥火咒: Authentic Woool talisman hit explosion
+        if (this.anims.exists('fx_talisman_hit_anim')) {
+          const tx = e.targetX || e.x;
+          const ty = e.targetY || e.y;
+          const fx = this.add.sprite(tx, ty, 'fx_3011');
+          fx.setDepth(ty + 20);
+          fx.setScale(1.0);
+          fx.play('fx_talisman_hit_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'poison') {
+        // 施毒术: Authentic Woool poison cloud
+        if (this.anims.exists('fx_poison_anim')) {
+          const fx = this.add.sprite(e.x, e.y, 'fx_3004');
+          fx.setDepth(e.y - 10);
+          fx.setScale(1.1);
+          fx.play('fx_poison_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'dash') {
+        // 突斩: Authentic Woool assault burst
+        if (this.anims.exists('fx_dash_anim')) {
+          const fx = this.add.sprite(e.x, e.y, 'fx_1010');
+          fx.setDepth(e.y + 20);
+          fx.setScale(1.0);
+          fx.play('fx_dash_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'shinsu') {
+        // 召唤神兽: Authentic Woool sacred beast flame
+        if (this.anims.exists('fx_shinsu_anim')) {
+          const fx = this.add.sprite(e.x, e.y, 'fx_3007');
+          fx.setDepth(e.y + 20);
+          fx.setScale(1.0);
+          fx.play('fx_shinsu_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
+      } else if (e.type === 'skeleton') {
+        // 强化骷髅: Authentic Woool double axe strike
+        if (this.anims.exists('fx_skeleton_anim')) {
+          const fx = this.add.sprite(e.x, e.y, 'fx_3012');
+          fx.setDepth(e.y + 20);
+          fx.setScale(1.0);
+          fx.play('fx_skeleton_anim');
+          fx.on('animationcomplete', () => fx.destroy());
+        }
       }
     }
-
-    // 2. Render graphics effects
-    this.fxGraphics.clear();
-
-    for (let i = this.activeFxList.length - 1; i >= 0; i--) {
-      const fx = this.activeFxList[i];
-      fx.life -= dt;
-      const progress = Math.max(0, fx.life / fx.maxLife);
-
-      if (fx.type === 'lightning') {
-        // 狂龙紫电: Authentic lightning branch from sky
-        this.drawLightning(fx.x, fx.y, progress);
-      } else if (fx.type === 'blade_arc') {
-        // 抱月刀: 360 degree spinning crescent arc
-        this.drawBladeArc(fx.x, fx.y, fx.radius || 110, progress);
-      } else if (fx.type === 'talisman') {
-        // 幽冥火咒: Flying ghostly blue talisman
-        this.drawTalisman(fx.x, fx.y, fx.targetX || fx.x, fx.targetY || fx.y, 1 - progress);
-      } else if (fx.type === 'meteor') {
-        // 流星火雨: Flame explosion
-        this.drawMeteor(fx.x, fx.y, fx.radius || 100, progress);
-      } else if (fx.type === 'hell_thunder') {
-        // 地狱雷光: Expanding electric ring
-        this.drawHellThunder(fx.x, fx.y, fx.radius || 150, progress);
-      } else if (fx.type === 'poison') {
-        // 施毒术: Poison pool
-        this.drawPoison(fx.x, fx.y, fx.radius || 120, progress);
-      } else if (fx.type === 'fire_slash') {
-        // 烈火剑法: Crimson flaming blade slash
-        this.drawFireSlash(fx.x, fx.y, progress);
-      }
-
-      if (fx.life <= 0) {
-        this.activeFxList.splice(i, 1);
-      }
-    }
-  }
-
-  private drawLightning(x: number, y: number, alpha: number) {
-    const gfx = this.fxGraphics;
-    const startY = y - 360;
-
-    gfx.lineStyle(4, 0xb042ff, alpha);
-    gfx.beginPath();
-    gfx.moveTo(x + (Math.random() - 0.5) * 40, startY);
-
-    let curX = x;
-    let curY = startY;
-    const segments = 6;
-    const stepY = 360 / segments;
-
-    for (let i = 1; i < segments; i++) {
-      curX += (Math.random() - 0.5) * 50;
-      curY += stepY;
-      gfx.lineTo(curX, curY);
-    }
-    gfx.lineTo(x, y);
-    gfx.strokePath();
-
-    // Inner bright white core
-    gfx.lineStyle(2, 0xffffff, alpha);
-    gfx.beginPath();
-    gfx.moveTo(x, startY);
-    gfx.lineTo(curX, curY);
-    gfx.lineTo(x, y);
-    gfx.strokePath();
-
-    // Ground impact flash
-    gfx.fillStyle(0xcc66ff, alpha * 0.6);
-    gfx.fillCircle(x, y, 32 * (1 - alpha * 0.3));
-    gfx.fillStyle(0xffffff, alpha * 0.8);
-    gfx.fillCircle(x, y, 14);
-  }
-
-  private drawBladeArc(x: number, y: number, radius: number, alpha: number) {
-    const gfx = this.fxGraphics;
-    const currentRadius = radius * (1.1 - alpha * 0.2);
-
-    gfx.lineStyle(6, 0xffd700, alpha * 0.9);
-    gfx.strokeCircle(x, y, currentRadius);
-
-    gfx.lineStyle(2, 0xffffff, alpha);
-    gfx.strokeCircle(x, y, currentRadius - 3);
-
-    // Glowing flare
-    gfx.fillStyle(0xfff0aa, alpha * 0.25);
-    gfx.fillCircle(x, y, currentRadius + 5);
-  }
-
-  private drawTalisman(x: number, y: number, tx: number, ty: number, progress: number) {
-    const gfx = this.fxGraphics;
-    const curX = Phaser.Math.Linear(x, tx, progress);
-    const curY = Phaser.Math.Linear(y, ty, progress);
-
-    // Talisman paper
-    gfx.fillStyle(0x00f0ff, 0.9);
-    gfx.fillRect(curX - 6, curY - 12, 12, 24);
-
-    // Soul flame glow
-    gfx.fillStyle(0x0088ff, 0.5);
-    gfx.fillCircle(curX, curY, 18);
-  }
-
-  private drawMeteor(x: number, y: number, radius: number, alpha: number) {
-    const gfx = this.fxGraphics;
-    const r = radius * (1.2 - alpha * 0.4);
-
-    gfx.fillStyle(0xff3300, alpha * 0.7);
-    gfx.fillCircle(x, y, r);
-
-    gfx.fillStyle(0xff9900, alpha * 0.9);
-    gfx.fillCircle(x, y, r * 0.6);
-
-    gfx.fillStyle(0xffff66, alpha);
-    gfx.fillCircle(x, y, r * 0.3);
-  }
-
-  private drawHellThunder(x: number, y: number, radius: number, alpha: number) {
-    const gfx = this.fxGraphics;
-    const curR = radius * (1 - alpha);
-
-    gfx.lineStyle(5, 0x3388ff, alpha);
-    gfx.strokeCircle(x, y, curR);
-
-    gfx.lineStyle(2, 0xffffff, alpha);
-    gfx.strokeCircle(x, y, curR + 6);
-  }
-
-  private drawPoison(x: number, y: number, radius: number, alpha: number) {
-    const gfx = this.fxGraphics;
-    gfx.fillStyle(0x22c55e, alpha * 0.4);
-    gfx.fillCircle(x, y, radius);
-    gfx.lineStyle(2, 0x16a34a, alpha * 0.7);
-    gfx.strokeCircle(x, y, radius);
-  }
-
-  private drawFireSlash(x: number, y: number, alpha: number) {
-    const gfx = this.fxGraphics;
-    gfx.lineStyle(8, 0xff2200, alpha);
-    gfx.beginPath();
-    gfx.arc(x, y, 40, -Math.PI / 4, (3 * Math.PI) / 4);
-    gfx.strokePath();
-
-    gfx.lineStyle(3, 0xffbb00, alpha);
-    gfx.beginPath();
-    gfx.arc(x, y, 42, -Math.PI / 4, (3 * Math.PI) / 4);
-    gfx.strokePath();
   }
 
   private syncUI(_dt: number) {

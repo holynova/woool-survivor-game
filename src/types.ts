@@ -26,6 +26,7 @@ export interface PassiveDefinition {
   id: string;
   name: string;
   iconId: number;
+  iconType?: 'skill' | 'item';
   desc: string;
   maxLevel: number;
   effect: {
@@ -129,7 +130,7 @@ export interface DamageNumber {
 
 export interface EffectEvent {
   id: number;
-  type: 'lightning' | 'blade_arc' | 'talisman' | 'meteor' | 'hell_thunder' | 'poison' | 'fire_slash' | 'level_up' | 'shield';
+  type: 'lightning' | 'blade_arc' | 'talisman' | 'meteor' | 'hell_thunder' | 'poison' | 'fire_slash' | 'level_up' | 'shield' | 'dash' | 'diamond_body' | 'wind_shield' | 'shinsu' | 'skeleton';
   x: number;
   y: number;
   targetX?: number;
