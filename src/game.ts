@@ -165,8 +165,8 @@ export class GameEngine {
     this.player.maxExp = 8;
     this.player.gold = 0;
     this.player.kills = 0;
-    this.player.x = 1000;
-    this.player.y = 800;
+    this.player.x = 1376;
+    this.player.y = 768;
     this.player.invulnerableTime = 1.0;
 
     this.emit();
@@ -190,8 +190,8 @@ export class GameEngine {
     const len = Math.hypot(this.inputX, this.inputY);
     if (len > 0.05) {
       const speed = this.player.speed * dt;
-      this.player.x = Math.max(60, Math.min(1940, this.player.x + (this.inputX / len) * speed));
-      this.player.y = Math.max(60, Math.min(1540, this.player.y + (this.inputY / len) * speed));
+      this.player.x = Math.max(80, Math.min(2672, this.player.x + (this.inputX / len) * speed));
+      this.player.y = Math.max(80, Math.min(1456, this.player.y + (this.inputY / len) * speed));
       this.player.dir = calcDirection(this.inputX, this.inputY);
       this.player.moving = true;
     } else {
@@ -569,8 +569,8 @@ export class GameEngine {
     // Spawn around player off-screen (600-800px away)
     const angle = Math.random() * Math.PI * 2;
     const dist = 550 + Math.random() * 200;
-    const x = this.player.x + Math.cos(angle) * dist;
-    const y = this.player.y + Math.sin(angle) * dist;
+    const x = Math.max(80, Math.min(2672, this.player.x + Math.cos(angle) * dist));
+    const y = Math.max(80, Math.min(1456, this.player.y + Math.sin(angle) * dist));
 
     const types = [
       { id: 'scarecrow', name: '稻草人', hp: 45, speed: 110, damage: 12, exp: 2, radius: 24, sprite: '20112' },
@@ -599,8 +599,8 @@ export class GameEngine {
   private spawnBoss() {
     this.bossSpawned = true;
     const angle = Math.random() * Math.PI * 2;
-    const x = this.player.x + Math.cos(angle) * 500;
-    const y = this.player.y + Math.sin(angle) * 500;
+    const x = Math.max(120, Math.min(2632, this.player.x + Math.cos(angle) * 500));
+    const y = Math.max(120, Math.min(1416, this.player.y + Math.sin(angle) * 500));
 
     const chap = WOOWL_CHAPTERS[this.chapterId] || WOOWL_CHAPTERS.sunset_island;
     this.monsters.push({

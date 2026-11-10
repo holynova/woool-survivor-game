@@ -145,6 +145,10 @@ export function App() {
                     setSelectedChapter(chap.id);
                   }}
                 >
+                  <div className="chapter-thumb-wrapper">
+                    <img src={assetUrl(chap.bgImage.replace('./', ''))} className="chapter-thumb-img" alt={chap.name} />
+                    <div className="chapter-thumb-overlay" />
+                  </div>
                   <div className="chapter-header">
                     <span className="chapter-name">{chap.name}</span>
                     <span className="chapter-subtitle">{chap.subtitle}</span>

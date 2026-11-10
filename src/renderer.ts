@@ -24,9 +24,9 @@ const HERO_ATLAS_MAP: Record<string, string> = {
 };
 
 const CHAPTER_MAP_IMAGE: Record<string, string> = {
-  sunset_island: 'floor_grass',
-  central_state: 'floor_stone',
-  hot_desert: 'floor_desert'
+  sunset_island: 'map_sunset_island',
+  central_state: 'map_central_state',
+  hot_desert: 'map_hot_desert'
 };
 
 interface ActiveEffectAnim {
@@ -42,7 +42,7 @@ interface ActiveEffectAnim {
 }
 
 export class BattleScene extends Phaser.Scene {
-  private bgTile!: Phaser.GameObjects.TileSprite;
+  private bgImage!: Phaser.GameObjects.Image;
   private playerSprite!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Graphics;
   private playerShieldSprite!: Phaser.GameObjects.Sprite;
@@ -77,10 +77,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   preload() {
-    // 1. Terrain Tiles
-    this.load.image('floor_grass', assetUrl('assets/woool/maps/floor_grass.png'));
-    this.load.image('floor_stone', assetUrl('assets/woool/maps/floor_stone.png'));
-    this.load.image('floor_desert', assetUrl('assets/woool/maps/floor_desert.png'));
+    // 1. High-Resolution 2.5D Isometric City & Fortress Maps
+    this.load.image('map_sunset_island', assetUrl('assets/woool/maps/map_sunset_town.jpg'));
+    this.load.image('map_central_state', assetUrl('assets/woool/maps/map_central_city.jpg'));
+    this.load.image('map_hot_desert', assetUrl('assets/woool/maps/map_desert_city.jpg'));
 
     // 2. Heroes
     this.load.atlas('hero_5110501', assetUrl('assets/woool/heroes/r_5110501@0.png'), assetUrl('assets/woool/heroes/r_5110501@0.json'));
@@ -116,15 +116,15 @@ export class BattleScene extends Phaser.Scene {
   create() {
     this.registerAllAnimations();
 
-    // Map Background
+    // Map Background (Full-Scene High-Resolution 2.5D Isometric City)
     this.currentChapterId = game.chapterId;
-    const mapKey = CHAPTER_MAP_IMAGE[this.currentChapterId] || 'floor_grass';
-    this.bgTile = this.add.tileSprite(1000, 800, 2400, 1800, mapKey);
-    this.bgTile.setOrigin(0.5, 0.5);
-    this.bgTile.setDepth(-100);
+    const mapKey = CHAPTER_MAP_IMAGE[this.currentChapterId] || 'map_sunset_island';
+    this.bgImage = this.add.image(1376, 768, mapKey);
+    this.bgImage.setOrigin(0.5, 0.5);
+    this.bgImage.setDepth(-100);
 
     // World Boundaries
-    this.cameras.main.setBounds(0, 0, 2000, 1600);
+    this.cameras.main.setBounds(0, 0, 2752, 1536);
 
     // Graphics Layers
     this.playerShadow = this.add.graphics().setDepth(5);
@@ -261,8 +261,8 @@ export class BattleScene extends Phaser.Scene {
     // Sync Background if chapter changed
     if (this.currentChapterId !== game.chapterId) {
       this.currentChapterId = game.chapterId;
-      const mapKey = CHAPTER_MAP_IMAGE[this.currentChapterId] || 'floor_grass';
-      this.bgTile.setTexture(mapKey);
+      const mapKey = CHAPTER_MAP_IMAGE[this.currentChapterId] || 'map_sunset_island';
+      this.bgImage.setTexture(mapKey);
     }
 
     // Sync Hero Sprite if class changed
