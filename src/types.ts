@@ -2,6 +2,8 @@ export type HeroClass = 'warrior' | 'wizard' | 'taoist';
 
 export type GamePhase = 'lobby' | 'battle' | 'level_up' | 'game_over' | 'victory';
 
+export type DifficultyCurveId = 'casual' | 'standard' | 'surge' | 'hell';
+
 export interface SkillDefinition {
   id: string;
   name: string;
@@ -93,6 +95,14 @@ export interface MonsterEntity {
   color?: number;
   animKey?: string;
   spriteKey?: string;
+  slowUntil?: number;
+  stunUntil?: number;
+  poisonUntil?: number;
+  poisonDps?: number;
+  burnUntil?: number;
+  burnDps?: number;
+  armorBreak?: number;
+  dashCd?: number;
 }
 
 export interface MinionEntity {
@@ -139,15 +149,48 @@ export interface EffectEvent {
   color?: number;
 }
 
+export interface MonsterArchetype {
+  id: string;
+  name: string;
+  hp: number;
+  speed: number;
+  damage: number;
+  exp: number;
+  radius: number;
+  spriteKey: string;
+}
+
+export interface DifficultyCurveDefinition {
+  id: DifficultyCurveId;
+  name: string;
+  badge: string;
+  summary: string;
+  hpMult: number;
+  dmgMult: number;
+  speedMult: number;
+  densityMult: number;
+  expMult: number;
+  cdMult: number;
+  eliteInterval: number;
+  bossTimeScale: number;
+  bossHpMult: number;
+  bossDmgMult: number;
+}
+
 export interface ChapterDefinition {
   id: string;
   name: string;
   subtitle: string;
   bgImage: string;
   bossName: string;
+  bossSpriteKey: string;
+  bossHp: number;
+  bossDamage: number;
+  chapterDifficulty: number;
   targetKills: number;
   durationSeconds: number;
   description: string;
+  ambientTheme: 'peach' | 'embers' | 'sand' | 'wisp' | 'frost' | 'lava';
   monsterPool: {
     typeId: string;
     weight: number;

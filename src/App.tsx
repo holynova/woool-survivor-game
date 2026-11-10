@@ -2,10 +2,14 @@ import React, { useState, useSyncExternalStore, useEffect } from 'react';
 import { game } from './game';
 import { WOOWL_SKILLS, WOOWL_PASSIVES } from './config/skills';
 import { WOOWL_CHAPTERS } from './config/chapters';
-import type { HeroClass } from './types';
+import { WOOWL_DIFFICULTY_CURVES } from './config/curves';
+import type { HeroClass, DifficultyCurveId } from './types';
 import { sound } from './audio';
 import { bootPhaser } from './renderer';
 import { assetUrl } from './utils';
+
+const APP_VERSION = 'v0.2.0';
+const GITHUB_REPO_URL = 'https://github.com/holynova/woool-survivor-game';
 
 function useGameState() {
   useSyncExternalStore(
@@ -25,6 +29,7 @@ export function App() {
   const state = useGameState();
   const [selectedClass, setSelectedClass] = useState<HeroClass>('wizard');
   const [selectedChapter, setSelectedChapter] = useState('sunset_island');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyCurveId>('standard');
 
   useEffect(() => {
     bootPhaser();
@@ -39,7 +44,7 @@ export function App() {
   const handleStartGame = () => {
     sound.init();
     sound.play('ui_click');
-    game.start(selectedClass, selectedChapter);
+    game.start(selectedClass, selectedChapter, selectedDifficulty);
   };
 
   const handleSelectUpgrade = (choice: typeof game.upgradeChoices[0]) => {
@@ -51,6 +56,9 @@ export function App() {
     sound.play('ui_click');
     game.resetForLobby();
   };
+
+  const activeBoss = state.getActiveBoss();
+  const activeCurve = WOOWL_DIFFICULTY_CURVES[state.difficultyId] || WOOWL_DIFFICULTY_CURVES.standard;
 
   return (
     <div className="game-container">
@@ -82,7 +90,7 @@ export function App() {
                 <div className="class-name">战 士</div>
                 <div className="class-tag">铜皮铁骨 · 贴身近战</div>
                 <div className="class-desc">
-                  初始气血 220<br />
+                  初始气血 240<br />
                   招牌绝技: <strong>抱月刀</strong><br />
                   360度大范围回旋弧月刀气，横扫四面合围敌群
                 </div>
@@ -104,7 +112,7 @@ export function App() {
                 <div className="class-name">法 师</div>
                 <div className="class-tag">紫雷天火 · 极光毁灭</div>
                 <div className="class-desc">
-                  初始气血 140<br />
+                  初始气血 155<br />
                   招牌绝技: <strong>狂龙紫电</strong><br />
                   引九天紫霄狂雷贯穿苍穹，连锁电弧弹射轰杀
                 </div>
@@ -126,17 +134,38 @@ export function App() {
                 <div className="class-name">道 士</div>
                 <div className="class-tag">双斧骷髅 · 幽冥符咒</div>
                 <div className="class-desc">
-                  初始气血 180<br />
+                  初始气血 190<br />
                   招牌绝技: <strong>强化骷髅术</strong><br />
                   召唤手持双大板斧的护法骷髅疯狗追杀群妖
                 </div>
               </div>
             </div>
 
-            {/* Chapter Selection */}
-            <div className="section-title">选择历练试炼地图</div>
+            {/* Difficulty Curve Selection */}
+            <div className="section-title">选择试炼难度曲线</div>
+            <div className="difficulty-cards">
+              {Object.values(WOOWL_DIFFICULTY_CURVES).map(curve => (
+                <div
+                  key={curve.id}
+                  className={`difficulty-card curve-${curve.id} ${selectedDifficulty === curve.id ? 'active' : ''}`}
+                  onClick={() => {
+                    sound.play('ui_click');
+                    setSelectedDifficulty(curve.id);
+                  }}
+                >
+                  <div className="difficulty-header">
+                    <span className="difficulty-name">{curve.name}</span>
+                    <span className="difficulty-badge">{curve.badge}</span>
+                  </div>
+                  <div className="difficulty-desc">{curve.summary}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Chapter Selection (6 Maps) */}
+            <div className="section-title">选择历练试炼地图 ({Object.keys(WOOWL_CHAPTERS).length}大传世疆域)</div>
             <div className="chapter-cards">
-              {Object.values(WOOWL_CHAPTERS).map(chap => (
+              {Object.values(WOOWL_CHAPTERS).map((chap, idx) => (
                 <div
                   key={chap.id}
                   className={`chapter-card ${selectedChapter === chap.id ? 'active' : ''}`}
@@ -148,24 +177,31 @@ export function App() {
                   <div className="chapter-thumb-wrapper">
                     <img src={assetUrl(chap.bgImage.replace('./', ''))} className="chapter-thumb-img" alt={chap.name} />
                     <div className="chapter-thumb-overlay" />
+                    <span className="chapter-tier-pill">第{idx + 1}幕 · 强度 x{chap.chapterDifficulty.toFixed(1)}</span>
                   </div>
                   <div className="chapter-header">
                     <span className="chapter-name">{chap.name}</span>
-                    <span className="chapter-subtitle">{chap.subtitle}</span>
                   </div>
-                  <div className="chapter-boss">镇守魔主: 【{chap.bossName}】</div>
+                  <div className="chapter-boss">魔主: 【{chap.bossName}】</div>
                   <div className="chapter-desc">{chap.description}</div>
                 </div>
               ))}
             </div>
 
-            {/* Start Button */}
+            {/* Start Button & Repo Meta */}
             <div className="lobby-actions">
               <button className="start-btn-woool" onClick={handleStartGame}>
                 <span className="btn-text">进入中州 · 开启远征</span>
               </button>
               <div className="controls-hint">
                 操作提示: 使用键盘 [W A S D] 或 [方向键] 移动，支持触屏鼠标拖动滑行，技能全部自动释放
+              </div>
+              <div className="lobby-footer-meta">
+                <span>传世幸存者 {APP_VERSION}</span>
+                <span className="meta-sep">|</span>
+                <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer" className="repo-link">
+                  GitHub 源码仓库
+                </a>
               </div>
             </div>
           </div>
@@ -208,8 +244,13 @@ export function App() {
               </div>
 
               <div className="top-badge">
+                <span className="label">{activeCurve.name}</span>
+                <span className="val gold">{state.wavePhaseName}</span>
+              </div>
+
+              <div className="top-badge">
                 <span className="label">时间</span>
-                <span className="val">{formatTime(state.clock)}</span>
+                <span className="val">{formatTime(state.clock)} / {formatTime(state.getBossTriggerTime())}</span>
               </div>
 
               <div className="top-badge">
@@ -235,6 +276,22 @@ export function App() {
                 经验: {state.player.exp} / {state.player.maxExp}
               </div>
             </div>
+
+            {/* Active Boss HP Bar */}
+            {activeBoss && (
+              <div className="hud-boss-bar-wrapper">
+                <div className="boss-bar-header">
+                  <span className="boss-name-tag">镇守魔尊 · {activeBoss.name}</span>
+                  <span className="boss-hp-num">{Math.max(0, Math.ceil(activeBoss.hp))} / {activeBoss.maxHp}</span>
+                </div>
+                <div className="boss-hp-track">
+                  <div
+                    className="boss-hp-fill"
+                    style={{ width: `${Math.max(0, (activeBoss.hp / activeBoss.maxHp) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Authentic Woool Bottom Bar */}
@@ -362,12 +419,23 @@ export function App() {
         </div>
       )}
 
-      {/* 4. GAME OVER MODAL */}
-      {state.phase === 'game_over' && (
+      {/* 4 & 5. RESULT MODAL (GAME OVER OR VICTORY) */}
+      {(state.phase === 'game_over' || state.phase === 'victory') && (
         <div className="modal-backdrop">
           <div className="result-dialog">
-            <div className="result-title defeat">胜 败 乃 兵 家 常 事</div>
+            <div className={`result-title ${state.phase === 'victory' ? 'victory' : 'defeat'}`}>
+              {state.phase === 'victory' ? '中 州 凯 旋 · 威 震 天 下' : '胜 败 乃 兵 家 常 事'}
+            </div>
+            <div className="result-desc">
+              {state.phase === 'victory'
+                ? `恭喜宗师荡平【${WOOWL_CHAPTERS[state.chapterId]?.name || '秘境'}】，成功通关【${activeCurve.name}】曲线试炼！`
+                : `止步于【${WOOWL_CHAPTERS[state.chapterId]?.name || '秘境'} · ${state.wavePhaseName}】（${activeCurve.name}）`}
+            </div>
             <div className="result-stats">
+              <div className="result-row">
+                <span>历练曲线:</span>
+                <span className="val gold">{activeCurve.name} ({activeCurve.badge})</span>
+              </div>
               <div className="result-row">
                 <span>历练时间:</span>
                 <span className="val">{formatTime(state.clock)}</span>
@@ -386,43 +454,14 @@ export function App() {
               </div>
             </div>
 
-            <button className="start-btn-woool" onClick={handleReturnLobby}>
-              <span className="btn-text">重 聚 中 州</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 5. VICTORY MODAL */}
-      {state.phase === 'victory' && (
-        <div className="modal-backdrop">
-          <div className="result-dialog">
-            <div className="result-title victory">中 州 凯 旋 · 威 震 天 下</div>
-            <div className="result-desc">
-              恭喜您成功荡平魔窟，斩杀关底魔尊！名震玛法大陆！
+            <div className="result-actions-row">
+              <button className="start-btn-woool" onClick={handleStartGame}>
+                <span className="btn-text">再 战 一 场</span>
+              </button>
+              <button className="start-btn-woool secondary-btn" onClick={handleReturnLobby}>
+                <span className="btn-text">{state.phase === 'victory' ? '班 师 回 朝' : '重 聚 中 州'}</span>
+              </button>
             </div>
-            <div className="result-stats">
-              <div className="result-row">
-                <span>通关用时:</span>
-                <span className="val">{formatTime(state.clock)}</span>
-              </div>
-              <div className="result-row">
-                <span>总计斩妖:</span>
-                <span className="val crimson">{state.player.kills} 尊</span>
-              </div>
-              <div className="result-row">
-                <span>缴获金币:</span>
-                <span className="val yellow">{state.player.gold} 两</span>
-              </div>
-              <div className="result-row">
-                <span>终极境界:</span>
-                <span className="val gold">Lv.{state.player.level}</span>
-              </div>
-            </div>
-
-            <button className="start-btn-woool" onClick={handleReturnLobby}>
-              <span className="btn-text">班 师 回 朝</span>
-            </button>
           </div>
         </div>
       )}

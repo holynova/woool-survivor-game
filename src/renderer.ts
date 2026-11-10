@@ -26,7 +26,10 @@ const HERO_ATLAS_MAP: Record<string, string> = {
 const CHAPTER_MAP_IMAGE: Record<string, string> = {
   sunset_island: 'map_sunset_island',
   central_state: 'map_central_state',
-  hot_desert: 'map_hot_desert'
+  hot_desert: 'map_hot_desert',
+  deadwater_marsh: 'map_deadwater_marsh',
+  frozen_citadel: 'map_frozen_citadel',
+  iron_citadel: 'map_iron_citadel'
 };
 
 interface ActiveEffectAnim {
@@ -81,6 +84,9 @@ export class BattleScene extends Phaser.Scene {
     this.load.image('map_sunset_island', assetUrl('assets/woool/maps/map_sunset_town.jpg'));
     this.load.image('map_central_state', assetUrl('assets/woool/maps/map_central_city.jpg'));
     this.load.image('map_hot_desert', assetUrl('assets/woool/maps/map_desert_city.jpg'));
+    this.load.image('map_deadwater_marsh', assetUrl('assets/woool/maps/map_forbidden_ruins.jpg'));
+    this.load.image('map_frozen_citadel', assetUrl('assets/woool/maps/map_frozen_city.jpg'));
+    this.load.image('map_iron_citadel', assetUrl('assets/woool/maps/map_iron_citadel.jpg'));
 
     // 2. Heroes
     this.load.atlas('hero_5110501', assetUrl('assets/woool/heroes/r_5110501@0.png'), assetUrl('assets/woool/heroes/r_5110501@0.json'));
@@ -135,6 +141,7 @@ export class BattleScene extends Phaser.Scene {
     this.playerShieldSprite = this.add.sprite(game.player.x, game.player.y, 'fx_1008');
     this.playerShieldSprite.setOrigin(0.5, 0.5);
     this.playerShieldSprite.setDepth(2001);
+    this.playerShieldSprite.setBlendMode(Phaser.BlendModes.ADD);
     this.playerShieldSprite.setVisible(false);
 
     // Player Sprite
@@ -333,8 +340,15 @@ export class BattleScene extends Phaser.Scene {
 
     // Player Shadow
     this.playerShadow.clear();
-    this.playerShadow.fillStyle(0x000000, 0.4);
+    this.playerShadow.fillStyle(0x000000, 0.42);
     this.playerShadow.fillEllipse(game.player.x, game.player.y + 40, 50, 20);
+
+    // Subtle hurt flash feedback
+    if (game.player.invulnerableTime > 0 && game.clock > 1.5 && Math.floor(game.clock * 20) % 2 === 0) {
+      this.playerSprite.setTint(0xff6666);
+    } else {
+      this.playerSprite.clearTint();
+    }
 
     // Shield Aura Sprite (Diamond Body / Wind Shield)
     if (game.clock < game.player.shieldUntil) {
@@ -371,9 +385,27 @@ export class BattleScene extends Phaser.Scene {
       sprite.setFlipX(flipX);
 
       if (m.isBoss) {
-        sprite.setScale(1.4);
+        sprite.setScale(m.spriteKey === '20085' ? 1.25 : 1.48);
+        this.playerShadow.lineStyle(3, 0xff2a2a, 0.85);
+        this.playerShadow.strokeEllipse(m.x, m.y + 38, 96, 36);
+      } else if (m.isElite) {
+        sprite.setScale(m.spriteKey === '20085' ? 1.05 : 1.22);
+        this.playerShadow.lineStyle(2, 0xd488ff, 0.85);
+        this.playerShadow.strokeEllipse(m.x, m.y + 34, 68, 26);
       } else {
-        sprite.setScale(1.0);
+        sprite.setScale(m.spriteKey === '20085' ? 0.85 : 1.0);
+      }
+
+      if (m.poisonUntil && game.clock < m.poisonUntil) {
+        sprite.setTint(0x66ff88);
+      } else if (m.burnUntil && game.clock < m.burnUntil) {
+        sprite.setTint(0xff9955);
+      } else if (m.stunUntil && game.clock < m.stunUntil) {
+        sprite.setTint(0xd8a8ff);
+      } else if (m.slowUntil && game.clock < m.slowUntil) {
+        sprite.setTint(0x88ddff);
+      } else {
+        sprite.clearTint();
       }
 
       const animKey = `${atlasKey}_walk_${dirDigit}`;
@@ -431,111 +463,53 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  private spawnAdditiveEffect(
+    x: number,
+    y: number,
+    texture: string,
+    animKey: string,
+    depth: number,
+    scale: number
+  ) {
+    if (!this.anims.exists(animKey)) return;
+    const fx = this.add.sprite(x, y, texture);
+    fx.setDepth(depth);
+    fx.setScale(scale);
+    // Original Woool FX sheets are baked on black; ADD blend drops black pixels cleanly into pure light glow.
+    fx.setBlendMode(Phaser.BlendModes.ADD);
+    fx.play(animKey);
+    fx.on('animationcomplete', () => fx.destroy());
+  }
+
   private syncEffects(_dt: number) {
-    // Take newly generated engine effects and play authentic Woool sprite animations
+    const fxTable: Record<string, { tex: string; anim: string; dy?: number; dDepth?: number; scale?: number; followPlayer?: boolean; useTarget?: boolean }> = {
+      level_up: { tex: 'level_up', anim: 'fx_level_up_anim', dy: -40, dDepth: 100, scale: 1.2 },
+      lightning: { tex: 'fx_2010', anim: 'fx_lightning_anim', dy: -50, dDepth: 200, scale: 1.1 },
+      blade_arc: { tex: 'fx_1004', anim: 'fx_blade_arc_anim', dDepth: 15, scale: 1.15, followPlayer: true },
+      meteor: { tex: 'fx_2011', anim: 'fx_meteor_anim', dy: -25, dDepth: 40, scale: 1.0 },
+      hell_thunder: { tex: 'fx_2003', anim: 'fx_hell_thunder_anim', dDepth: 15, scale: 1.2, followPlayer: true },
+      fire_slash: { tex: 'fx_1006', anim: 'fx_fire_slash_anim', dDepth: 30, scale: 1.05 },
+      talisman: { tex: 'fx_3011', anim: 'fx_talisman_hit_anim', dDepth: 20, scale: 1.0, useTarget: true },
+      poison: { tex: 'fx_3004', anim: 'fx_poison_anim', dDepth: -10, scale: 1.1 },
+      dash: { tex: 'fx_1010', anim: 'fx_dash_anim', dDepth: 20, scale: 1.0 },
+      shinsu: { tex: 'fx_3007', anim: 'fx_shinsu_anim', dDepth: 20, scale: 1.0 },
+      skeleton: { tex: 'fx_3012', anim: 'fx_skeleton_anim', dDepth: 20, scale: 1.0 }
+    };
+
     const newEffects = game.takeEffects();
     for (const e of newEffects) {
-      if (e.type === 'level_up') {
-        if (this.anims.exists('fx_level_up_anim')) {
-          const fx = this.add.sprite(e.x, e.y - 40, 'level_up');
-          fx.setDepth(e.y + 100);
-          fx.setScale(1.2);
-          fx.play('fx_level_up_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'lightning') {
-        // 狂龙紫电: Authentic Woool purple lightning
-        if (this.anims.exists('fx_lightning_anim')) {
-          const fx = this.add.sprite(e.x, e.y - 50, 'fx_2010');
-          fx.setDepth(e.y + 200);
-          fx.setScale(1.1);
-          fx.play('fx_lightning_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'blade_arc') {
-        // 抱月刀: Authentic Woool 360 crescent blade sweep
-        if (this.anims.exists('fx_blade_arc_anim')) {
-          const fx = this.add.sprite(this.playerSprite.x, this.playerSprite.y, 'fx_1004');
-          fx.setDepth(this.playerSprite.y + 15);
-          fx.setScale(1.15);
-          fx.play('fx_blade_arc_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'meteor') {
-        // 流星火雨: Authentic Woool fiery meteor explosion
-        if (this.anims.exists('fx_meteor_anim')) {
-          const fx = this.add.sprite(e.x, e.y - 25, 'fx_2011');
-          fx.setDepth(e.y + 40);
-          fx.setScale(1.0);
-          fx.play('fx_meteor_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'hell_thunder') {
-        // 地狱雷光: Authentic Woool electric burst ring
-        if (this.anims.exists('fx_hell_thunder_anim')) {
-          const fx = this.add.sprite(this.playerSprite.x, this.playerSprite.y, 'fx_2003');
-          fx.setDepth(this.playerSprite.y + 15);
-          fx.setScale(1.2);
-          fx.play('fx_hell_thunder_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'fire_slash') {
-        // 烈火剑法: Authentic Woool fire blade explosion
-        if (this.anims.exists('fx_fire_slash_anim')) {
-          const fx = this.add.sprite(e.x, e.y, 'fx_1006');
-          fx.setDepth(e.y + 30);
-          fx.setScale(1.05);
-          fx.play('fx_fire_slash_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'talisman') {
-        // 幽冥火咒: Authentic Woool talisman hit explosion
-        if (this.anims.exists('fx_talisman_hit_anim')) {
-          const tx = e.targetX || e.x;
-          const ty = e.targetY || e.y;
-          const fx = this.add.sprite(tx, ty, 'fx_3011');
-          fx.setDepth(ty + 20);
-          fx.setScale(1.0);
-          fx.play('fx_talisman_hit_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'poison') {
-        // 施毒术: Authentic Woool poison cloud
-        if (this.anims.exists('fx_poison_anim')) {
-          const fx = this.add.sprite(e.x, e.y, 'fx_3004');
-          fx.setDepth(e.y - 10);
-          fx.setScale(1.1);
-          fx.play('fx_poison_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'dash') {
-        // 突斩: Authentic Woool assault burst
-        if (this.anims.exists('fx_dash_anim')) {
-          const fx = this.add.sprite(e.x, e.y, 'fx_1010');
-          fx.setDepth(e.y + 20);
-          fx.setScale(1.0);
-          fx.play('fx_dash_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'shinsu') {
-        // 召唤神兽: Authentic Woool sacred beast flame
-        if (this.anims.exists('fx_shinsu_anim')) {
-          const fx = this.add.sprite(e.x, e.y, 'fx_3007');
-          fx.setDepth(e.y + 20);
-          fx.setScale(1.0);
-          fx.play('fx_shinsu_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      } else if (e.type === 'skeleton') {
-        // 强化骷髅: Authentic Woool double axe strike
-        if (this.anims.exists('fx_skeleton_anim')) {
-          const fx = this.add.sprite(e.x, e.y, 'fx_3012');
-          fx.setDepth(e.y + 20);
-          fx.setScale(1.0);
-          fx.play('fx_skeleton_anim');
-          fx.on('animationcomplete', () => fx.destroy());
-        }
-      }
+      const cfg = fxTable[e.type];
+      if (!cfg) continue;
+      const sx = cfg.followPlayer ? this.playerSprite.x : (cfg.useTarget && e.targetX ? e.targetX : e.x);
+      const sy = cfg.followPlayer ? this.playerSprite.y : (cfg.useTarget && e.targetY ? e.targetY : e.y);
+      this.spawnAdditiveEffect(
+        sx,
+        sy + (cfg.dy || 0),
+        cfg.tex,
+        cfg.anim,
+        sy + (cfg.dDepth || 0),
+        cfg.scale || 1.0
+      );
     }
   }
 
