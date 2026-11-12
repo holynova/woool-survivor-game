@@ -343,11 +343,15 @@ export class GameEngine {
       if (targets.length === 0) return false;
 
       sound.play(def.soundKey);
+      const bladeDir = targets[0]
+        ? calcDirection(targets[0].x - this.player.x, targets[0].y - this.player.y)
+        : this.player.dir;
       this.effects.push({
         id: this.nextEntityId++,
         type: 'blade_arc',
         x: this.player.x,
         y: this.player.y,
+        dir: bladeDir,
         radius: reach
       });
 
@@ -510,24 +514,30 @@ export class GameEngine {
 
     if (id === 'assault_dash') {
       const dashDist = level >= 2 ? 210 : 165;
-      const angle = (this.player.dir / 8) * Math.PI * 2;
-      const targetX = this.player.x + Math.cos(angle) * dashDist;
-      const targetY = this.player.y + Math.sin(angle) * dashDist;
+      // Align 0..7 facing octant (0 = up = -PI/2) with math radians
+      const angle = (this.player.dir / 8) * Math.PI * 2 - Math.PI / 2;
+      const startX = this.player.x;
+      const startY = this.player.y;
+      const clampedX = Math.max(80, Math.min(WORLD_WIDTH - 80, startX + Math.cos(angle) * dashDist));
+      const clampedY = Math.max(80, Math.min(WORLD_HEIGHT - 80, startY + Math.sin(angle) * dashDist));
+      const impactR = level >= 3 ? 160 : 125;
+
+      this.player.x = clampedX;
+      this.player.y = clampedY;
+      this.player.invulnerableTime = Math.max(this.player.invulnerableTime, level >= 4 ? 0.7 : 0.4);
 
       sound.play(def.soundKey);
       this.effects.push({
         id: this.nextEntityId++,
         type: 'dash',
-        x: this.player.x,
-        y: this.player.y,
-        radius: 110
+        x: startX,
+        y: startY,
+        targetX: clampedX,
+        targetY: clampedY,
+        dir: this.player.dir,
+        radius: impactR
       });
 
-      this.player.x = Math.max(80, Math.min(WORLD_WIDTH - 80, targetX));
-      this.player.y = Math.max(80, Math.min(WORLD_HEIGHT - 80, targetY));
-      this.player.invulnerableTime = Math.max(this.player.invulnerableTime, level >= 4 ? 0.7 : 0.4);
-
-      const impactR = level >= 3 ? 160 : 125;
       const inPath = this.monsters.filter(m => Math.hypot(m.x - this.player.x, m.y - this.player.y) <= impactR);
       for (const m of inPath) {
         m.stunUntil = Math.max(m.stunUntil || 0, this.clock + 0.7);
@@ -578,11 +588,14 @@ export class GameEngine {
       if (!target) return false;
 
       sound.play(def.soundKey);
+      const fireDx = target.x - this.player.x;
+      const fireDy = target.y - this.player.y;
       this.effects.push({
         id: this.nextEntityId++,
         type: 'fire_slash',
-        x: target.x,
-        y: target.y
+        x: this.player.x + fireDx * 0.15,
+        y: this.player.y + fireDy * 0.15,
+        dir: calcDirection(fireDx, fireDy)
       });
 
       const burstMult = level >= 4 ? 1.8 : 1.45;
@@ -631,9 +644,10 @@ export class GameEngine {
           sound.play(m.type === 'skeleton' ? 'skill_slash' : 'skill_fireball');
           this.effects.push({
             id: this.nextEntityId++,
-            type: m.type === 'skeleton' ? 'skeleton' : 'shinsu',
+            type: m.type === 'skeleton' ? 'skeleton_hit' : 'shinsu_hit',
             x: target.x,
-            y: target.y
+            y: target.y,
+            dir: m.dir
           });
           m.attackCd = m.type === 'skeleton' ? 0.58 : 0.9;
         }
@@ -666,6 +680,12 @@ export class GameEngine {
       attackCd: 0.45
     };
     this.minions.push(minion);
+    this.effects.push({
+      id: this.nextEntityId++,
+      type,
+      x: minion.x,
+      y: minion.y
+    });
   }
 
   private updateMonsterSpawns(dt: number) {

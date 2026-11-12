@@ -140,11 +140,28 @@ export interface DamageNumber {
 
 export interface EffectEvent {
   id: number;
-  type: 'lightning' | 'blade_arc' | 'talisman' | 'meteor' | 'hell_thunder' | 'poison' | 'fire_slash' | 'level_up' | 'shield' | 'dash' | 'diamond_body' | 'wind_shield' | 'shinsu' | 'skeleton';
+  type:
+    | 'lightning'
+    | 'blade_arc'
+    | 'talisman'
+    | 'meteor'
+    | 'hell_thunder'
+    | 'poison'
+    | 'fire_slash'
+    | 'level_up'
+    | 'shield'
+    | 'dash'
+    | 'diamond_body'
+    | 'wind_shield'
+    | 'shinsu'
+    | 'shinsu_hit'
+    | 'skeleton'
+    | 'skeleton_hit';
   x: number;
   y: number;
   targetX?: number;
   targetY?: number;
+  dir?: number;
   radius?: number;
   color?: number;
 }

@@ -32,18 +32,6 @@ const CHAPTER_MAP_IMAGE: Record<string, string> = {
   iron_citadel: 'map_iron_citadel'
 };
 
-interface ActiveEffectAnim {
-  type: string;
-  x: number;
-  y: number;
-  targetX?: number;
-  targetY?: number;
-  radius?: number;
-  color?: number;
-  life: number;
-  maxLife: number;
-}
-
 export class BattleScene extends Phaser.Scene {
   private bgImage!: Phaser.GameObjects.Image;
   private playerSprite!: Phaser.GameObjects.Sprite;
@@ -59,7 +47,10 @@ export class BattleScene extends Phaser.Scene {
   private fxGraphics!: Phaser.GameObjects.Graphics;
   private uiGraphics!: Phaser.GameObjects.Graphics;
 
-  private activeFxList: ActiveEffectAnim[] = [];
+  private fxSprites = new Set<Phaser.GameObjects.Sprite>();
+  private fxTweens = new Set<Phaser.Tweens.Tween>();
+  private fxTimers = new Set<Phaser.Time.TimerEvent>();
+  private lastGameClock = 0;
 
   private damageTexts = new Map<number, Phaser.GameObjects.Text>();
   private damageTextPool: Phaser.GameObjects.Text[] = [];
@@ -117,6 +108,8 @@ export class BattleScene extends Phaser.Scene {
     this.load.atlas('fx_3007', assetUrl('assets/woool/skills_fx/s_3007@0.png'), assetUrl('assets/woool/skills_fx/s_3007@0.json'));
     this.load.atlas('fx_3012', assetUrl('assets/woool/skills_fx/s_3012@0.png'), assetUrl('assets/woool/skills_fx/s_3012@0.json'));
     this.load.atlas('fx_1010', assetUrl('assets/woool/skills_fx/s_1010@0.png'), assetUrl('assets/woool/skills_fx/s_1010@0.json'));
+    this.load.atlas('fx_2202', assetUrl('assets/woool/skills_fx/s_2202@0.png'), assetUrl('assets/woool/skills_fx/s_2202@0.json'));
+    this.load.atlas('fx_2001', assetUrl('assets/woool/skills_fx/s_2001@0.png'), assetUrl('assets/woool/skills_fx/s_2001@0.json'));
   }
 
   create() {
@@ -137,11 +130,11 @@ export class BattleScene extends Phaser.Scene {
     this.fxGraphics = this.add.graphics().setDepth(2000);
     this.uiGraphics = this.add.graphics().setDepth(3000);
 
-    // Player Shield Sprite
+    // Player Shield Sprite (pre-extracted clean alpha avoids white washout on bright terrain)
     this.playerShieldSprite = this.add.sprite(game.player.x, game.player.y, 'fx_1008');
     this.playerShieldSprite.setOrigin(0.5, 0.5);
     this.playerShieldSprite.setDepth(2001);
-    this.playerShieldSprite.setBlendMode(Phaser.BlendModes.ADD);
+    this.playerShieldSprite.setBlendMode(Phaser.BlendModes.NORMAL);
     this.playerShieldSprite.setVisible(false);
 
     // Player Sprite
@@ -222,34 +215,70 @@ export class BattleScene extends Phaser.Scene {
       });
     }
 
-    // Register Authentic Woool Skill Animations
-    const skillAnimConfigs = [
-      { key: 'fx_lightning_anim', atlas: 'fx_2010', prefix: '2010/hit', fps: 18 },
-      { key: 'fx_blade_arc_anim', atlas: 'fx_1004', prefix: '1004/attack', fps: 24 },
-      { key: 'fx_meteor_anim', atlas: 'fx_2011', prefix: '2011/hit', fps: 20 },
-      { key: 'fx_hell_thunder_anim', atlas: 'fx_2003', prefix: '2003/hit', fps: 16 },
-      { key: 'fx_fire_slash_anim', atlas: 'fx_1006', prefix: '1006/attack', fps: 24 },
+    // Register Authentic Woool Skill Animations (non-directional)
+    const skillAnimConfigs: { key: string; atlas: string; prefix: string; fps: number; repeat?: number; startIndex?: number }[] = [
+      { key: 'fx_lightning_cast_anim', atlas: 'fx_2010', prefix: '2010/casting', fps: 20 },
+      { key: 'fx_lightning_anim', atlas: 'fx_2010', prefix: '2010/hit', fps: 18, startIndex: 2 },
+      { key: 'fx_meteor_cast_anim', atlas: 'fx_2011', prefix: '2011/casting', fps: 20 },
+      { key: 'fx_meteor_drop_anim', atlas: 'fx_2202', prefix: '2202/track', fps: 16, repeat: -1 },
+      { key: 'fx_meteor_boom_anim', atlas: 'fx_2202', prefix: '2202/hit', fps: 22 },
+      { key: 'fx_hell_thunder_anim', atlas: 'fx_2003', prefix: '2003/hit', fps: 18 },
+      { key: 'fx_talisman_cast_anim', atlas: 'fx_3011', prefix: '3011/casting', fps: 18 },
       { key: 'fx_talisman_fly_anim', atlas: 'fx_3011', prefix: '3011/track', fps: 12, repeat: -1 },
-      { key: 'fx_talisman_hit_anim', atlas: 'fx_3011', prefix: '3011/hit', fps: 18 },
-      { key: 'fx_poison_anim', atlas: 'fx_3004', prefix: '3004/hit', fps: 14 },
+      { key: 'fx_talisman_hit_anim', atlas: 'fx_3011', prefix: '3011/hit', fps: 20 },
+      { key: 'fx_poison_cast_anim', atlas: 'fx_3004', prefix: '3004/casting', fps: 16 },
+      { key: 'fx_poison_anim', atlas: 'fx_3004', prefix: '3004/hit', fps: 16 },
+      { key: 'fx_diamond_body_cast_anim', atlas: 'fx_1008', prefix: '1008/casting', fps: 12 },
       { key: 'fx_diamond_body_anim', atlas: 'fx_1008', prefix: '1008/loop', fps: 14, repeat: -1 },
       { key: 'fx_wind_shield_anim', atlas: 'fx_2009', prefix: '2009/loop', fps: 14, repeat: -1 },
-      { key: 'fx_shinsu_anim', atlas: 'fx_3007', prefix: '3007/hit', fps: 18 },
-      { key: 'fx_skeleton_anim', atlas: 'fx_3012', prefix: '3012/hit', fps: 16 },
-      { key: 'fx_dash_anim', atlas: 'fx_1010', prefix: '1010/attack', fps: 20 }
+      { key: 'fx_shinsu_anim', atlas: 'fx_3007', prefix: '3007/hit', fps: 16, startIndex: 10 },
+      { key: 'fx_shinsu_hit_anim', atlas: 'fx_2001', prefix: '2001/hit', fps: 20 },
+      { key: 'fx_skeleton_anim', atlas: 'fx_3012', prefix: '3012/hit', fps: 18 }
     ];
 
     for (const cfg of skillAnimConfigs) {
       if (this.textures.exists(cfg.atlas) && !this.anims.exists(cfg.key)) {
-        const frameNames = this.textures.get(cfg.atlas).getFrameNames()
+        const allFrames = this.textures.get(cfg.atlas).getFrameNames()
           .filter(f => f.startsWith(cfg.prefix))
           .sort();
+        const frameNames = cfg.startIndex && cfg.startIndex < allFrames.length
+          ? allFrames.slice(cfg.startIndex)
+          : allFrames;
         if (frameNames.length > 0) {
           this.anims.create({
             key: cfg.key,
             frames: frameNames.map(f => ({ key: cfg.atlas, frame: f })),
             frameRate: cfg.fps,
             repeat: cfg.repeat !== undefined ? cfg.repeat : 0
+          });
+        }
+      }
+    }
+
+    // Register 5-direction Woool Skill Animations separately (0..4) so casts never cycle across directions
+    const dirSkillConfigs: { baseKey: string; atlas: string; prefix: string; fps: number; startIndex?: number }[] = [
+      { baseKey: 'fx_blade_arc_anim', atlas: 'fx_1004', prefix: '1004/attack', fps: 14, startIndex: 2 },
+      { baseKey: 'fx_fire_slash_anim', atlas: 'fx_1006', prefix: '1006/attack', fps: 16, startIndex: 3 },
+      { baseKey: 'fx_dash_anim', atlas: 'fx_1010', prefix: '1010/attack', fps: 15 }
+    ];
+
+    for (const cfg of dirSkillConfigs) {
+      if (!this.textures.exists(cfg.atlas)) continue;
+      const allFrames = this.textures.get(cfg.atlas).getFrameNames();
+      for (let d = 0; d <= 4; d++) {
+        const animKey = `${cfg.baseKey}_d${d}`;
+        if (this.anims.exists(animKey)) continue;
+        const dirPrefix = `${cfg.prefix}/${d}`;
+        const sortedFrames = allFrames.filter(f => f.startsWith(dirPrefix)).sort();
+        const frameNames = cfg.startIndex && cfg.startIndex < sortedFrames.length
+          ? sortedFrames.slice(cfg.startIndex)
+          : sortedFrames;
+        if (frameNames.length > 0) {
+          this.anims.create({
+            key: animKey,
+            frames: frameNames.map(f => ({ key: cfg.atlas, frame: f })),
+            frameRate: cfg.fps,
+            repeat: 0
           });
         }
       }
@@ -264,6 +293,17 @@ export class BattleScene extends Phaser.Scene {
 
     // Run Engine Update
     game.update(dt);
+
+    // Clear stale FX immediately when restarting a run or switching chapter/class
+    if (
+      game.phase !== 'battle' ||
+      game.clock < this.lastGameClock - 0.05 ||
+      this.currentChapterId !== game.chapterId ||
+      this.currentHeroClass !== game.heroClass
+    ) {
+      this.clearTransientFx();
+    }
+    this.lastGameClock = game.clock;
 
     // Sync Background if chapter changed
     if (this.currentChapterId !== game.chapterId) {
@@ -352,10 +392,13 @@ export class BattleScene extends Phaser.Scene {
 
     // Shield Aura Sprite (Diamond Body / Wind Shield)
     if (game.clock < game.player.shieldUntil) {
+      const isWizard = game.heroClass === 'wizard';
       this.playerShieldSprite.setVisible(true);
-      this.playerShieldSprite.setPosition(game.player.x, game.player.y);
-      this.playerShieldSprite.setDepth(game.player.y + 1);
-      const shieldAnim = game.heroClass === 'wizard' ? 'fx_wind_shield_anim' : 'fx_diamond_body_anim';
+      this.playerShieldSprite.setPosition(game.player.x, game.player.y + (isWizard ? 28 : 4));
+      this.playerShieldSprite.setScale(isWizard ? 0.86 : 1.08);
+      this.playerShieldSprite.setAlpha(isWizard ? 0.92 : 0.95);
+      this.playerShieldSprite.setDepth(game.player.y + (isWizard ? 4 : -2));
+      const shieldAnim = isWizard ? 'fx_wind_shield_anim' : 'fx_diamond_body_anim';
       if (this.anims.exists(shieldAnim) && (!this.playerShieldSprite.anims.isPlaying || this.playerShieldSprite.anims.currentAnim?.key !== shieldAnim)) {
         this.playerShieldSprite.play(shieldAnim);
       }
@@ -463,52 +506,307 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private spawnAdditiveEffect(
+  private trackSprite<T extends Phaser.GameObjects.Sprite>(sprite: T): T {
+    this.fxSprites.add(sprite);
+    sprite.once('destroy', () => this.fxSprites.delete(sprite));
+    return sprite;
+  }
+
+  private trackTween(config: Phaser.Types.Tweens.TweenBuilderConfig): Phaser.Tweens.Tween {
+    const userOnComplete = config.onComplete;
+    const tween = this.tweens.add({
+      ...config,
+      onComplete: (tw, targets, ...rest) => {
+        this.fxTweens.delete(tw);
+        if (userOnComplete) userOnComplete(tw, targets, ...rest);
+      },
+      onStop: (tw) => {
+        this.fxTweens.delete(tw);
+      }
+    });
+    this.fxTweens.add(tween);
+    return tween;
+  }
+
+  private scheduleFx(delayMs: number, fn: () => void) {
+    if (delayMs <= 0) {
+      fn();
+      return;
+    }
+    const timer = this.time.delayedCall(delayMs, () => {
+      this.fxTimers.delete(timer);
+      fn();
+    });
+    this.fxTimers.add(timer);
+  }
+
+  private clearTransientFx() {
+    for (const t of this.fxTimers) t.remove(false);
+    this.fxTimers.clear();
+    for (const tw of this.fxTweens) tw.stop();
+    this.fxTweens.clear();
+    for (const sp of Array.from(this.fxSprites)) {
+      if (sp && sp.scene) sp.destroy();
+    }
+    this.fxSprites.clear();
+    if (this.playerShieldSprite) this.playerShieldSprite.setVisible(false);
+  }
+
+  private spawnSkillEffect(
     x: number,
     y: number,
     texture: string,
     animKey: string,
     depth: number,
-    scale: number
+    scale: number,
+    flipX = false,
+    blendMode: Phaser.BlendModes | number = Phaser.BlendModes.NORMAL
   ) {
     if (!this.anims.exists(animKey)) return;
-    const fx = this.add.sprite(x, y, texture);
+    const fx = this.trackSprite(this.add.sprite(x, y, texture));
+    fx.setOrigin(0.5, 0.5);
     fx.setDepth(depth);
     fx.setScale(scale);
-    // Original Woool FX sheets are baked on black; ADD blend drops black pixels cleanly into pure light glow.
-    fx.setBlendMode(Phaser.BlendModes.ADD);
+    fx.setFlipX(flipX);
+    fx.setBlendMode(blendMode);
     fx.play(animKey);
     fx.on('animationcomplete', () => fx.destroy());
   }
 
+  private spawnTalismanProjectile(startX: number, startY: number, targetX: number, targetY: number) {
+    const sy = startY - 18;
+    const ty = targetY - 14;
+    const dist = Math.hypot(targetX - startX, ty - sy);
+
+    if (this.anims.exists('fx_talisman_fly_anim') && dist > 28) {
+      const proj = this.trackSprite(this.add.sprite(startX, sy, 'fx_3011'));
+      proj.setOrigin(0.5, 0.5);
+      proj.setScale(0.92);
+      proj.setDepth(Math.max(startY, targetY) + 40);
+      proj.setRotation(Math.atan2(ty - sy, targetX - startX));
+      proj.setBlendMode(Phaser.BlendModes.NORMAL);
+      proj.play('fx_talisman_fly_anim');
+
+      const duration = Math.max(240, Math.min(420, Math.round(dist * 1.15)));
+      this.trackTween({
+        targets: proj,
+        x: targetX,
+        y: ty,
+        duration,
+        ease: 'Linear',
+        onComplete: () => {
+          proj.destroy();
+          this.spawnSkillEffect(targetX, targetY + 4, 'fx_3011', 'fx_talisman_hit_anim', targetY + 25, 0.94);
+        }
+      });
+    } else {
+      this.spawnSkillEffect(targetX, targetY + 4, 'fx_3011', 'fx_talisman_hit_anim', targetY + 25, 0.94);
+    }
+  }
+
+  private spawnMeteorEffect(x: number, y: number, delayMs: number) {
+    this.scheduleFx(delayMs, () => {
+      const startX = x + 68;
+      const startY = y - 160;
+      const endY = y - 10;
+
+      if (this.anims.exists('fx_meteor_drop_anim')) {
+        const drop = this.trackSprite(this.add.sprite(startX, startY, 'fx_2202'));
+        drop.setOrigin(0.5, 0.5);
+        drop.setScale(0.92);
+        drop.setDepth(y + 80);
+        drop.setRotation(Math.atan2(endY - startY, x - startX));
+        drop.setBlendMode(Phaser.BlendModes.NORMAL);
+        drop.play('fx_meteor_drop_anim');
+
+        this.trackTween({
+          targets: drop,
+          x,
+          y: endY,
+          duration: 115,
+          ease: 'Quad.easeIn',
+          onComplete: () => {
+            drop.destroy();
+            this.spawnSkillEffect(x, endY, 'fx_2202', 'fx_meteor_boom_anim', y + 35, 0.92);
+            this.spawnSkillEffect(x, y - 16, 'fx_2011', 'fx_meteor_cast_anim', y + 42, 0.68);
+          }
+        });
+      } else {
+        this.spawnSkillEffect(x, y - 16, 'fx_2011', 'fx_meteor_cast_anim', y + 42, 0.68);
+      }
+    });
+  }
+
+  private spawnDashEffect(startX: number, startY: number, targetX: number, targetY: number, dir: number) {
+    const heroAtlas = HERO_ATLAS_MAP[this.currentHeroClass] || 'hero_5110501';
+    const currentFrame = this.playerSprite.frame?.name;
+    const { dirDigit, flipX } = getDirInfo(dir);
+
+    // Translucent cyan warrior afterimages bridging start -> arrival
+    if (currentFrame) {
+      for (const t of [0.22, 0.52, 0.8]) {
+        const ax = startX + (targetX - startX) * t;
+        const ay = startY + (targetY - startY) * t;
+        const ghost = this.trackSprite(this.add.sprite(ax, ay, heroAtlas, currentFrame));
+        ghost.setOrigin(0.5, 0.5);
+        ghost.setFlipX(flipX);
+        ghost.setDepth(ay - 1);
+        ghost.setTint(0x66ccff);
+        ghost.setAlpha(0.62);
+        this.trackTween({
+          targets: ghost,
+          alpha: 0,
+          duration: 240,
+          ease: 'Quad.easeOut',
+          onComplete: () => ghost.destroy()
+        });
+      }
+    }
+
+    const animKey = `fx_dash_anim_d${dirDigit}`;
+    if (!this.anims.exists(animKey)) return;
+
+    // Gliding dash slash traveling with the warrior
+    const streak = this.trackSprite(this.add.sprite(startX, startY, 'fx_1010'));
+    streak.setOrigin(0.5, 0.5);
+    streak.setScale(1.45);
+    streak.setFlipX(flipX);
+    streak.setDepth(Math.max(startY, targetY) + 25);
+    streak.play(animKey);
+    streak.on('animationcomplete', () => streak.destroy());
+    this.trackTween({
+      targets: streak,
+      x: targetX,
+      y: targetY,
+      duration: 135,
+      ease: 'Quad.easeOut'
+    });
+
+    // Crisp impact dash crescent at destination
+    this.scheduleFx(45, () => {
+      this.spawnSkillEffect(targetX, targetY, 'fx_1010', animKey, targetY + 30, 1.55, flipX);
+    });
+  }
+
   private syncEffects(_dt: number) {
-    const fxTable: Record<string, { tex: string; anim: string; dy?: number; dDepth?: number; scale?: number; followPlayer?: boolean; useTarget?: boolean }> = {
-      level_up: { tex: 'level_up', anim: 'fx_level_up_anim', dy: -40, dDepth: 100, scale: 1.2 },
-      lightning: { tex: 'fx_2010', anim: 'fx_lightning_anim', dy: -50, dDepth: 200, scale: 1.1 },
-      blade_arc: { tex: 'fx_1004', anim: 'fx_blade_arc_anim', dDepth: 15, scale: 1.15, followPlayer: true },
-      meteor: { tex: 'fx_2011', anim: 'fx_meteor_anim', dy: -25, dDepth: 40, scale: 1.0 },
-      hell_thunder: { tex: 'fx_2003', anim: 'fx_hell_thunder_anim', dDepth: 15, scale: 1.2, followPlayer: true },
-      fire_slash: { tex: 'fx_1006', anim: 'fx_fire_slash_anim', dDepth: 30, scale: 1.05 },
-      talisman: { tex: 'fx_3011', anim: 'fx_talisman_hit_anim', dDepth: 20, scale: 1.0, useTarget: true },
-      poison: { tex: 'fx_3004', anim: 'fx_poison_anim', dDepth: -10, scale: 1.1 },
-      dash: { tex: 'fx_1010', anim: 'fx_dash_anim', dDepth: 20, scale: 1.0 },
-      shinsu: { tex: 'fx_3007', anim: 'fx_shinsu_anim', dDepth: 20, scale: 1.0 },
-      skeleton: { tex: 'fx_3012', anim: 'fx_skeleton_anim', dDepth: 20, scale: 1.0 }
+    const directionalFx: Record<string, { tex: string; baseAnim: string; dy?: number; dDepth?: number; scale: number; followPlayer?: boolean }> = {
+      blade_arc: { tex: 'fx_1004', baseAnim: 'fx_blade_arc_anim', dy: 4, dDepth: 18, scale: 1.22, followPlayer: true },
+      fire_slash: { tex: 'fx_1006', baseAnim: 'fx_fire_slash_anim', dy: 2, dDepth: 30, scale: 1.2 },
+      skeleton_hit: { tex: 'fx_1004', baseAnim: 'fx_blade_arc_anim', dy: 6, dDepth: 16, scale: 0.72 }
+    };
+
+    const fxTable: Record<string, { tex: string; anim: string; dy?: number; dDepth?: number; scale?: number; followPlayer?: boolean }> = {
+      level_up: { tex: 'level_up', anim: 'fx_level_up_anim', dy: -40, dDepth: 100, scale: 1.15 },
+      lightning: { tex: 'fx_2010', anim: 'fx_lightning_anim', dy: 14, dDepth: 200, scale: 0.8 },
+      hell_thunder: { tex: 'fx_2003', anim: 'fx_hell_thunder_anim', dy: -6, dDepth: 15, scale: 1.0, followPlayer: true },
+      poison: { tex: 'fx_3004', anim: 'fx_poison_anim', dy: -14, dDepth: 18, scale: 1.05 },
+      diamond_body: { tex: 'fx_1008', anim: 'fx_diamond_body_cast_anim', dy: -6, dDepth: 12, scale: 1.25, followPlayer: true },
+      shinsu: { tex: 'fx_3007', anim: 'fx_shinsu_anim', dy: 6, dDepth: 20, scale: 1.15 },
+      shinsu_hit: { tex: 'fx_2001', anim: 'fx_shinsu_hit_anim', dy: -10, dDepth: 25, scale: 0.78 },
+      skeleton: { tex: 'fx_3012', anim: 'fx_skeleton_anim', dy: 10, dDepth: 20, scale: 0.88 }
     };
 
     const newEffects = game.takeEffects();
+    const castPlayedThisTick = new Set<string>();
+    let meteorIndex = 0;
+
     for (const e of newEffects) {
+      if (e.type === 'lightning' && !castPlayedThisTick.has('lightning')) {
+        castPlayedThisTick.add('lightning');
+        this.spawnSkillEffect(
+          this.playerSprite.x,
+          this.playerSprite.y - 6,
+          'fx_2010',
+          'fx_lightning_cast_anim',
+          this.playerSprite.y + 15,
+          1.05
+        );
+      }
+
+      if (e.type === 'poison' && !castPlayedThisTick.has('poison')) {
+        castPlayedThisTick.add('poison');
+        this.spawnSkillEffect(
+          this.playerSprite.x,
+          this.playerSprite.y - 8,
+          'fx_3004',
+          'fx_poison_cast_anim',
+          this.playerSprite.y + 15,
+          0.85
+        );
+      }
+
+      if (e.type === 'talisman') {
+        if (!castPlayedThisTick.has('talisman')) {
+          castPlayedThisTick.add('talisman');
+          this.spawnSkillEffect(
+            this.playerSprite.x,
+            this.playerSprite.y + 16,
+            'fx_3011',
+            'fx_talisman_cast_anim',
+            this.playerSprite.y - 1,
+            0.85
+          );
+        }
+        this.spawnTalismanProjectile(
+          e.x,
+          e.y,
+          e.targetX ?? e.x,
+          e.targetY ?? e.y
+        );
+        continue;
+      }
+
+      if (e.type === 'meteor') {
+        this.spawnMeteorEffect(e.x, e.y, Math.min(160, meteorIndex * 45));
+        meteorIndex++;
+        continue;
+      }
+
+      if (e.type === 'dash') {
+        this.spawnDashEffect(
+          e.x,
+          e.y,
+          e.targetX ?? e.x,
+          e.targetY ?? e.y,
+          e.dir ?? game.player.dir
+        );
+        continue;
+      }
+
+      const dirCfg = directionalFx[e.type];
+      if (dirCfg) {
+        const sx = dirCfg.followPlayer ? this.playerSprite.x : e.x;
+        const sy = dirCfg.followPlayer ? this.playerSprite.y : e.y;
+        const { dirDigit, flipX } = getDirInfo(e.dir ?? game.player.dir);
+        this.spawnSkillEffect(
+          sx,
+          sy + (dirCfg.dy || 0),
+          dirCfg.tex,
+          `${dirCfg.baseAnim}_d${dirDigit}`,
+          sy + (dirCfg.dDepth || 0),
+          dirCfg.scale,
+          flipX
+        );
+        continue;
+      }
+
       const cfg = fxTable[e.type];
       if (!cfg) continue;
-      const sx = cfg.followPlayer ? this.playerSprite.x : (cfg.useTarget && e.targetX ? e.targetX : e.x);
-      const sy = cfg.followPlayer ? this.playerSprite.y : (cfg.useTarget && e.targetY ? e.targetY : e.y);
-      this.spawnAdditiveEffect(
+      const sx = cfg.followPlayer ? this.playerSprite.x : e.x;
+      const sy = cfg.followPlayer ? this.playerSprite.y : e.y;
+      let scale = cfg.scale || 1.0;
+      if (e.radius && e.type === 'hell_thunder') {
+        scale = Math.max(0.85, Math.min(1.12, e.radius / 165));
+      } else if (e.radius && e.type === 'poison') {
+        scale = Math.max(0.92, Math.min(1.18, e.radius / 115));
+      }
+      this.spawnSkillEffect(
         sx,
         sy + (cfg.dy || 0),
         cfg.tex,
         cfg.anim,
         sy + (cfg.dDepth || 0),
-        cfg.scale || 1.0
+        scale
       );
     }
   }

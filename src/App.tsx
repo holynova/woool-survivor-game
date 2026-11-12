@@ -8,7 +8,7 @@ import { sound } from './audio';
 import { bootPhaser } from './renderer';
 import { assetUrl } from './utils';
 
-const APP_VERSION = 'v0.2.0';
+const APP_VERSION = 'v0.2.1';
 const GITHUB_REPO_URL = 'https://github.com/holynova/woool-survivor-game';
 
 function useGameState() {
