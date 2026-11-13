@@ -23,17 +23,90 @@ const HERO_ATLAS_MAP: Record<string, string> = {
   taoist: 'hero_5130503'
 };
 
-const CHAPTER_MAP_IMAGE: Record<string, string> = {
-  sunset_island: 'map_sunset_island',
-  central_state: 'map_central_state',
-  hot_desert: 'map_hot_desert',
-  deadwater_marsh: 'map_deadwater_marsh',
-  frozen_citadel: 'map_frozen_citadel',
-  iron_citadel: 'map_iron_citadel'
+const CHAPTER_GROUND_TILE: Record<string, string> = {
+  sunset_island: 'floor_grass',
+  central_state: 'floor_grass',
+  hot_desert: 'floor_desert',
+  deadwater_marsh: 'floor_grass',
+  frozen_citadel: 'floor_stone',
+  iron_citadel: 'floor_stone'
 };
 
+const DECOR_MAP_LAYOUT: Array<{ x: number; y: number; texture: string }> = [
+  // Northwest quadrant
+  { x: 550, y: 480, texture: 'tree_pine' },
+  { x: 720, y: 520, texture: 'tree_pine' },
+  { x: 920, y: 440, texture: 'rock_boulder' },
+  { x: 1250, y: 620, texture: 'tree_peach' },
+  { x: 1420, y: 700, texture: 'tree_peach' },
+  { x: 800, y: 880, texture: 'tree_willow' },
+  { x: 1100, y: 920, texture: 'wood_fence' },
+  { x: 1650, y: 650, texture: 'tree_willow' },
+  { x: 600, y: 1150, texture: 'rock_boulder' },
+  { x: 1400, y: 1100, texture: 'wood_fence' },
+
+  // Northeast quadrant
+  { x: 3350, y: 480, texture: 'tree_pine' },
+  { x: 3600, y: 540, texture: 'tree_peach' },
+  { x: 3820, y: 620, texture: 'tree_peach' },
+  { x: 4150, y: 520, texture: 'rock_boulder' },
+  { x: 4350, y: 750, texture: 'tree_pine' },
+  { x: 3150, y: 820, texture: 'tree_willow' },
+  { x: 3500, y: 900, texture: 'wood_fence' },
+  { x: 3950, y: 1020, texture: 'tree_willow' },
+  { x: 4250, y: 1180, texture: 'rock_boulder' },
+  { x: 3200, y: 1150, texture: 'stone_lantern' },
+
+  // Southwest quadrant
+  { x: 620, y: 1850, texture: 'tree_pine' },
+  { x: 880, y: 1950, texture: 'rock_boulder' },
+  { x: 1200, y: 2050, texture: 'tree_peach' },
+  { x: 1380, y: 2150, texture: 'tree_peach' },
+  { x: 650, y: 2400, texture: 'rock_boulder' },
+  { x: 950, y: 2520, texture: 'tree_pine' },
+  { x: 1150, y: 2650, texture: 'tree_willow' },
+  { x: 1450, y: 2750, texture: 'wood_fence' },
+  { x: 1720, y: 2450, texture: 'tree_willow' },
+  { x: 1550, y: 2200, texture: 'stone_lantern' },
+
+  // Southeast quadrant
+  { x: 3250, y: 1920, texture: 'stone_lantern' },
+  { x: 3550, y: 2050, texture: 'tree_peach' },
+  { x: 3850, y: 1980, texture: 'rock_boulder' },
+  { x: 4200, y: 1950, texture: 'tree_pine' },
+  { x: 3380, y: 2420, texture: 'tree_willow' },
+  { x: 3650, y: 2550, texture: 'wood_fence' },
+  { x: 4050, y: 2480, texture: 'tree_pine' },
+  { x: 4350, y: 2650, texture: 'rock_boulder' },
+  { x: 3200, y: 2800, texture: 'tree_willow' },
+  { x: 3750, y: 2850, texture: 'tree_peach' },
+
+  // Plaza corners & avenue landmarks
+  { x: 1920, y: 1280, texture: 'stone_lantern' },
+  { x: 2880, y: 1280, texture: 'stone_lantern' },
+  { x: 1920, y: 1920, texture: 'stone_lantern' },
+  { x: 2880, y: 1920, texture: 'stone_lantern' },
+  { x: 2400, y: 650, texture: 'wood_fence' },
+  { x: 2400, y: 2550, texture: 'wood_fence' },
+  { x: 1350, y: 1600, texture: 'tree_willow' },
+  { x: 3450, y: 1600, texture: 'tree_willow' },
+  { x: 1500, y: 1450, texture: 'rock_boulder' },
+  { x: 3300, y: 1750, texture: 'rock_boulder' },
+  { x: 2150, y: 780, texture: 'tree_peach' },
+  { x: 2650, y: 780, texture: 'tree_peach' },
+  { x: 2150, y: 2420, texture: 'tree_pine' },
+  { x: 2650, y: 2420, texture: 'tree_pine' }
+];
+
 export class BattleScene extends Phaser.Scene {
-  private bgImage!: Phaser.GameObjects.Image;
+  // Modular Tiled Map
+  private groundTile!: Phaser.GameObjects.TileSprite;
+  private plazaTile!: Phaser.GameObjects.TileSprite;
+  private roadH!: Phaser.GameObjects.TileSprite;
+  private roadV!: Phaser.GameObjects.TileSprite;
+  private decorSprites: Phaser.GameObjects.Sprite[] = [];
+
+  // Entities
   private playerSprite!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Graphics;
   private playerShieldSprite!: Phaser.GameObjects.Sprite;
@@ -43,6 +116,9 @@ export class BattleScene extends Phaser.Scene {
 
   private minionSprites = new Map<number, Phaser.GameObjects.Sprite>();
   private minionPool: Phaser.GameObjects.Sprite[] = [];
+
+  private dropSprites = new Map<number, Phaser.GameObjects.Sprite>();
+  private dropPool: Phaser.GameObjects.Sprite[] = [];
 
   private fxGraphics!: Phaser.GameObjects.Graphics;
   private uiGraphics!: Phaser.GameObjects.Graphics;
@@ -71,20 +147,30 @@ export class BattleScene extends Phaser.Scene {
   }
 
   preload() {
-    // 1. High-Resolution 2.5D Isometric City & Fortress Maps
-    this.load.image('map_sunset_island', assetUrl('assets/woool/maps/map_sunset_town.jpg'));
-    this.load.image('map_central_state', assetUrl('assets/woool/maps/map_central_city.jpg'));
-    this.load.image('map_hot_desert', assetUrl('assets/woool/maps/map_desert_city.jpg'));
-    this.load.image('map_deadwater_marsh', assetUrl('assets/woool/maps/map_forbidden_ruins.jpg'));
-    this.load.image('map_frozen_citadel', assetUrl('assets/woool/maps/map_frozen_city.jpg'));
-    this.load.image('map_iron_citadel', assetUrl('assets/woool/maps/map_iron_citadel.jpg'));
+    // 1. Modular Seamless Floor Tiles (Authentic Woool 96x64)
+    this.load.image('floor_grass', assetUrl('assets/woool/maps/floor_grass.png'));
+    this.load.image('floor_desert', assetUrl('assets/woool/maps/floor_desert.png'));
+    this.load.image('floor_stone', assetUrl('assets/woool/maps/floor_stone.png'));
 
-    // 2. Heroes
+    // 2. Modular 2.5D Decor Sprites (Trees, Rocks, Fences, Lanterns)
+    this.load.image('tree_peach', assetUrl('assets/woool/maps/tree_peach.png'));
+    this.load.image('tree_willow', assetUrl('assets/woool/maps/tree_willow.png'));
+    this.load.image('tree_pine', assetUrl('assets/woool/maps/tree_pine.png'));
+    this.load.image('rock_boulder', assetUrl('assets/woool/maps/rock_boulder.png'));
+    this.load.image('wood_fence', assetUrl('assets/woool/maps/wood_fence.png'));
+    this.load.image('stone_lantern', assetUrl('assets/woool/maps/stone_lantern.png'));
+
+    // 3. Authentic Woool Ground Gold Coins
+    this.load.image('coin_1', assetUrl('assets/woool/items/gold_coin_1.png'));
+    this.load.image('coin_2', assetUrl('assets/woool/items/gold_coin_2.png'));
+    this.load.image('coin_3', assetUrl('assets/woool/items/gold_coin_3.png'));
+
+    // 4. Heroes
     this.load.atlas('hero_5110501', assetUrl('assets/woool/heroes/r_5110501@0.png'), assetUrl('assets/woool/heroes/r_5110501@0.json'));
     this.load.atlas('hero_5120503', assetUrl('assets/woool/heroes/r_5120503@0.png'), assetUrl('assets/woool/heroes/r_5120503@0.json'));
     this.load.atlas('hero_5130503', assetUrl('assets/woool/heroes/r_5130503@0.png'), assetUrl('assets/woool/heroes/r_5130503@0.json'));
 
-    // 3. Monsters
+    // 5. Monsters
     this.load.atlas('m_20038', assetUrl('assets/woool/monsters/m_20038@0.png'), assetUrl('assets/woool/monsters/m_20038@0.json'));
     this.load.atlas('m_20046', assetUrl('assets/woool/monsters/m_20046@0.png'), assetUrl('assets/woool/monsters/m_20046@0.json'));
     this.load.atlas('m_20072', assetUrl('assets/woool/monsters/m_20072@0.png'), assetUrl('assets/woool/monsters/m_20072@0.json'));
@@ -94,7 +180,7 @@ export class BattleScene extends Phaser.Scene {
     this.load.atlas('m_20111', assetUrl('assets/woool/monsters/m_20111@0.png'), assetUrl('assets/woool/monsters/m_20111@0.json'));
     this.load.atlas('m_20112', assetUrl('assets/woool/monsters/m_20112@0.png'), assetUrl('assets/woool/monsters/m_20112@0.json'));
 
-    // 4. Effects
+    // 6. Skill Effects
     this.load.atlas('level_up', assetUrl('assets/woool/effects/level_up@0.png'), assetUrl('assets/woool/effects/level_up@0.json'));
     this.load.atlas('fx_2010', assetUrl('assets/woool/skills_fx/s_2010@0.png'), assetUrl('assets/woool/skills_fx/s_2010@0.json'));
     this.load.atlas('fx_1004', assetUrl('assets/woool/skills_fx/s_1004@0.png'), assetUrl('assets/woool/skills_fx/s_1004@0.json'));
@@ -115,37 +201,49 @@ export class BattleScene extends Phaser.Scene {
   create() {
     this.registerAllAnimations();
 
-    // Map Background (Full-Scene High-Resolution 2.5D Isometric City)
+    // 1. Modular Seamless Ground System (Native 1:1 Pixel Sharpness)
     this.currentChapterId = game.chapterId;
-    const mapKey = CHAPTER_MAP_IMAGE[this.currentChapterId] || 'map_sunset_island';
-    this.bgImage = this.add.image(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, mapKey);
-    this.bgImage.setDisplaySize(WORLD_WIDTH, WORLD_HEIGHT);
-    this.bgImage.setOrigin(0.5, 0.5);
-    this.bgImage.setDepth(-100);
+    const baseGroundKey = CHAPTER_GROUND_TILE[this.currentChapterId] || 'floor_grass';
 
-    // World Boundaries
+    this.groundTile = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, WORLD_WIDTH, WORLD_HEIGHT, baseGroundKey);
+    this.groundTile.setDepth(-200);
+
+    // Stone roads and central grand plaza
+    this.roadH = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, WORLD_WIDTH, 192, 'floor_stone');
+    this.roadH.setDepth(-195);
+
+    this.roadV = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 192, WORLD_HEIGHT, 'floor_stone');
+    this.roadV.setDepth(-195);
+
+    this.plazaTile = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 1056, 768, 'floor_stone');
+    this.plazaTile.setDepth(-190);
+
+    // 2. Modular Decor Objects (Y-depth sorted to eliminate rooftop bugs)
+    this.buildDecorLayout();
+
+    // 3. World Boundaries
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    // Graphics Layers
+    // 4. Graphics Layers
     this.playerShadow = this.add.graphics().setDepth(5);
     this.fxGraphics = this.add.graphics().setDepth(2000);
     this.uiGraphics = this.add.graphics().setDepth(3000);
 
-    // Player Shield Sprite (pre-extracted clean alpha avoids white washout on bright terrain)
+    // 5. Player Shield Sprite
     this.playerShieldSprite = this.add.sprite(game.player.x, game.player.y, 'fx_1008');
     this.playerShieldSprite.setOrigin(0.5, 0.5);
     this.playerShieldSprite.setDepth(2001);
     this.playerShieldSprite.setBlendMode(Phaser.BlendModes.NORMAL);
     this.playerShieldSprite.setVisible(false);
 
-    // Player Sprite
+    // 6. Player Sprite
     this.currentHeroClass = game.heroClass;
     const heroAtlas = HERO_ATLAS_MAP[this.currentHeroClass] || 'hero_5120503';
     this.playerSprite = this.add.sprite(game.player.x, game.player.y, heroAtlas);
     this.playerSprite.setOrigin(0.5, 0.5);
     this.playerSprite.setDepth(100);
 
-    // Camera follow player
+    // Camera follow player smoothly
     this.cameras.main.startFollow(this.playerSprite, true, 0.1, 0.1);
 
     // Keyboard inputs
@@ -160,129 +258,12 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private registerAllAnimations() {
-    const atlases = [
-      'hero_5110501',
-      'hero_5120503',
-      'hero_5130503',
-      'm_20038',
-      'm_20046',
-      'm_20072',
-      'm_20081',
-      'm_20082',
-      'm_20085',
-      'm_20111',
-      'm_20112'
-    ];
-
-    for (const atlasKey of atlases) {
-      if (!this.textures.exists(atlasKey)) continue;
-      const frameNames = this.textures.get(atlasKey).getFrameNames();
-      const groups = new Map<string, string[]>();
-
-      for (const name of frameNames) {
-        const parts = name.split('/');
-        if (parts.length >= 3) {
-          const action = parts[parts.length - 2];
-          const filename = parts[parts.length - 1];
-          const dirDigit = filename[0];
-          const groupKey = `${atlasKey}_${action}_${dirDigit}`;
-          if (!groups.has(groupKey)) groups.set(groupKey, []);
-          groups.get(groupKey)!.push(name);
-        }
-      }
-
-      for (const [key, frames] of groups.entries()) {
-        frames.sort();
-        if (!this.anims.exists(key)) {
-          this.anims.create({
-            key,
-            frames: frames.map(f => ({ key: atlasKey, frame: f })),
-            frameRate: key.includes('run') || key.includes('walk') ? 10 : 8,
-            repeat: -1
-          });
-        }
-      }
-    }
-
-    // Register level_up animation
-    if (this.textures.exists('level_up') && !this.anims.exists('fx_level_up_anim')) {
-      const levelUpFrames = this.textures.get('level_up').getFrameNames().sort();
-      this.anims.create({
-        key: 'fx_level_up_anim',
-        frames: levelUpFrames.map(f => ({ key: 'level_up', frame: f })),
-        frameRate: 18,
-        repeat: 0
-      });
-    }
-
-    // Register Authentic Woool Skill Animations (non-directional)
-    const skillAnimConfigs: { key: string; atlas: string; prefix: string; fps: number; repeat?: number; startIndex?: number }[] = [
-      { key: 'fx_lightning_cast_anim', atlas: 'fx_2010', prefix: '2010/casting', fps: 20 },
-      { key: 'fx_lightning_anim', atlas: 'fx_2010', prefix: '2010/hit', fps: 18, startIndex: 2 },
-      { key: 'fx_meteor_cast_anim', atlas: 'fx_2011', prefix: '2011/casting', fps: 20 },
-      { key: 'fx_meteor_drop_anim', atlas: 'fx_2202', prefix: '2202/track', fps: 16, repeat: -1 },
-      { key: 'fx_meteor_boom_anim', atlas: 'fx_2202', prefix: '2202/hit', fps: 22 },
-      { key: 'fx_hell_thunder_anim', atlas: 'fx_2003', prefix: '2003/hit', fps: 18 },
-      { key: 'fx_talisman_cast_anim', atlas: 'fx_3011', prefix: '3011/casting', fps: 18 },
-      { key: 'fx_talisman_fly_anim', atlas: 'fx_3011', prefix: '3011/track', fps: 12, repeat: -1 },
-      { key: 'fx_talisman_hit_anim', atlas: 'fx_3011', prefix: '3011/hit', fps: 20 },
-      { key: 'fx_poison_cast_anim', atlas: 'fx_3004', prefix: '3004/casting', fps: 16 },
-      { key: 'fx_poison_anim', atlas: 'fx_3004', prefix: '3004/hit', fps: 16 },
-      { key: 'fx_diamond_body_cast_anim', atlas: 'fx_1008', prefix: '1008/casting', fps: 12 },
-      { key: 'fx_diamond_body_anim', atlas: 'fx_1008', prefix: '1008/loop', fps: 14, repeat: -1 },
-      { key: 'fx_wind_shield_anim', atlas: 'fx_2009', prefix: '2009/loop', fps: 14, repeat: -1 },
-      { key: 'fx_shinsu_anim', atlas: 'fx_3007', prefix: '3007/hit', fps: 16, startIndex: 10 },
-      { key: 'fx_shinsu_hit_anim', atlas: 'fx_2001', prefix: '2001/hit', fps: 20 },
-      { key: 'fx_skeleton_anim', atlas: 'fx_3012', prefix: '3012/hit', fps: 18 }
-    ];
-
-    for (const cfg of skillAnimConfigs) {
-      if (this.textures.exists(cfg.atlas) && !this.anims.exists(cfg.key)) {
-        const allFrames = this.textures.get(cfg.atlas).getFrameNames()
-          .filter(f => f.startsWith(cfg.prefix))
-          .sort();
-        const frameNames = cfg.startIndex && cfg.startIndex < allFrames.length
-          ? allFrames.slice(cfg.startIndex)
-          : allFrames;
-        if (frameNames.length > 0) {
-          this.anims.create({
-            key: cfg.key,
-            frames: frameNames.map(f => ({ key: cfg.atlas, frame: f })),
-            frameRate: cfg.fps,
-            repeat: cfg.repeat !== undefined ? cfg.repeat : 0
-          });
-        }
-      }
-    }
-
-    // Register 5-direction Woool Skill Animations separately (0..4) so casts never cycle across directions
-    const dirSkillConfigs: { baseKey: string; atlas: string; prefix: string; fps: number; startIndex?: number }[] = [
-      { baseKey: 'fx_blade_arc_anim', atlas: 'fx_1004', prefix: '1004/attack', fps: 14, startIndex: 2 },
-      { baseKey: 'fx_fire_slash_anim', atlas: 'fx_1006', prefix: '1006/attack', fps: 16, startIndex: 3 },
-      { baseKey: 'fx_dash_anim', atlas: 'fx_1010', prefix: '1010/attack', fps: 15 }
-    ];
-
-    for (const cfg of dirSkillConfigs) {
-      if (!this.textures.exists(cfg.atlas)) continue;
-      const allFrames = this.textures.get(cfg.atlas).getFrameNames();
-      for (let d = 0; d <= 4; d++) {
-        const animKey = `${cfg.baseKey}_d${d}`;
-        if (this.anims.exists(animKey)) continue;
-        const dirPrefix = `${cfg.prefix}/${d}`;
-        const sortedFrames = allFrames.filter(f => f.startsWith(dirPrefix)).sort();
-        const frameNames = cfg.startIndex && cfg.startIndex < sortedFrames.length
-          ? sortedFrames.slice(cfg.startIndex)
-          : sortedFrames;
-        if (frameNames.length > 0) {
-          this.anims.create({
-            key: animKey,
-            frames: frameNames.map(f => ({ key: cfg.atlas, frame: f })),
-            frameRate: cfg.fps,
-            repeat: 0
-          });
-        }
-      }
+  private buildDecorLayout() {
+    for (const item of DECOR_MAP_LAYOUT) {
+      const sprite = this.add.sprite(item.x, item.y, item.texture);
+      sprite.setOrigin(0.5, 0.9);
+      sprite.setDepth(item.y); // Dynamic 2.5D isometric depth!
+      this.decorSprites.push(sprite);
     }
   }
 
@@ -306,11 +287,11 @@ export class BattleScene extends Phaser.Scene {
     }
     this.lastGameClock = game.clock;
 
-    // Sync Background if chapter changed
+    // Sync Background Floor if chapter changed
     if (this.currentChapterId !== game.chapterId) {
       this.currentChapterId = game.chapterId;
-      const mapKey = CHAPTER_MAP_IMAGE[this.currentChapterId] || 'map_sunset_island';
-      this.bgImage.setTexture(mapKey);
+      const groundKey = CHAPTER_GROUND_TILE[this.currentChapterId] || 'floor_grass';
+      this.groundTile.setTexture(groundKey);
     }
 
     // Sync Hero Sprite if class changed
@@ -323,16 +304,19 @@ export class BattleScene extends Phaser.Scene {
     // Sync Player Visuals
     this.syncPlayer();
 
-    // Sync Monsters
+    // Sync Monsters (with giant Elites, Supreme Boss & Glowing under-foot auras)
     this.syncMonsters();
 
     // Sync Minions
     this.syncMinions();
 
-    // Consume and Render Skills & Effects
+    // Sync Ground Drops (Tiered gold coin sprites)
+    this.syncDrops();
+
+    // Consume and Render Skills & Effects (Evolving with Level 1 -> 4)
     this.syncEffects(dt);
 
-    // Sync UI (HP bars, Damage texts, Drops)
+    // Sync UI (HP bars, Damage texts)
     this.syncUI(dt);
   }
 
@@ -347,31 +331,35 @@ export class BattleScene extends Phaser.Scene {
       if (this.cursors.down.isDown || this.wasd?.s.isDown) iy += 1;
     }
 
-    // Touch / Mouse Pointer drag
+    // Pointer input
     const pointer = this.input.activePointer;
-    if (pointer.isDown && pointer.getDuration() > 80) {
-      const worldPoint = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
-      const dx = worldPoint.x - game.player.x;
-      const dy = worldPoint.y - game.player.y;
-      if (Math.hypot(dx, dy) > 40) {
-        ix = dx;
-        iy = dy;
+    if (pointer.isDown) {
+      const screenCenterX = this.cameras.main.width / 2;
+      const screenCenterY = this.cameras.main.height / 2;
+      const pdx = pointer.x - screenCenterX;
+      const pdy = pointer.y - screenCenterY;
+      const dist = Math.hypot(pdx, pdy);
+      if (dist > 25) {
+        ix = pdx / dist;
+        iy = pdy / dist;
       }
     }
 
-    game.setInput(ix, iy);
+    game.inputX = ix;
+    game.inputY = iy;
   }
 
   private syncPlayer() {
     this.playerSprite.setPosition(game.player.x, game.player.y);
     this.playerSprite.setDepth(game.player.y);
 
+    const heroAtlas = HERO_ATLAS_MAP[this.currentHeroClass] || 'hero_5120503';
     const { dirDigit, flipX } = getDirInfo(game.player.dir);
     this.playerSprite.setFlipX(flipX);
 
-    const heroAtlas = HERO_ATLAS_MAP[game.heroClass] || 'hero_5120503';
-    const action = game.player.moving ? 'run' : 'stand';
-    const animKey = `${heroAtlas}_${action}_${dirDigit}`;
+    const animKey = game.player.moving
+      ? `${heroAtlas}_walk_${dirDigit}`
+      : `${heroAtlas}_idle_${dirDigit}`;
 
     if (this.anims.exists(animKey)) {
       if (!this.playerSprite.anims.isPlaying || this.playerSprite.anims.currentAnim?.key !== animKey) {
@@ -379,29 +367,26 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
-    // Player Shadow
-    this.playerShadow.clear();
-    this.playerShadow.fillStyle(0x000000, 0.42);
-    this.playerShadow.fillEllipse(game.player.x, game.player.y + 40, 50, 20);
-
-    // Subtle hurt flash feedback
-    if (game.player.invulnerableTime > 0 && game.clock > 1.5 && Math.floor(game.clock * 20) % 2 === 0) {
-      this.playerSprite.setTint(0xff6666);
+    // Flash white when invulnerable
+    if (game.player.invulnerableTime > 0) {
+      const flash = Math.floor(game.clock * 20) % 2 === 0;
+      this.playerSprite.setAlpha(flash ? 0.45 : 0.95);
     } else {
-      this.playerSprite.clearTint();
+      this.playerSprite.setAlpha(1.0);
     }
 
-    // Shield Aura Sprite (Diamond Body / Wind Shield)
+    // Player Shadow
+    this.playerShadow.clear();
+    this.playerShadow.fillStyle(0x000000, 0.4);
+    this.playerShadow.fillEllipse(game.player.x, game.player.y + 24, 46, 16);
+
+    // Active Shield Visual
     if (game.clock < game.player.shieldUntil) {
-      const isWizard = game.heroClass === 'wizard';
+      this.playerShieldSprite.setPosition(game.player.x, game.player.y);
+      this.playerShieldSprite.setDepth(game.player.y + 1);
       this.playerShieldSprite.setVisible(true);
-      this.playerShieldSprite.setPosition(game.player.x, game.player.y + (isWizard ? 28 : 4));
-      this.playerShieldSprite.setScale(isWizard ? 0.86 : 1.08);
-      this.playerShieldSprite.setAlpha(isWizard ? 0.92 : 0.95);
-      this.playerShieldSprite.setDepth(game.player.y + (isWizard ? 4 : -2));
-      const shieldAnim = isWizard ? 'fx_wind_shield_anim' : 'fx_diamond_body_anim';
-      if (this.anims.exists(shieldAnim) && (!this.playerShieldSprite.anims.isPlaying || this.playerShieldSprite.anims.currentAnim?.key !== shieldAnim)) {
-        this.playerShieldSprite.play(shieldAnim);
+      if (this.anims.exists('fx_diamond_body_buff_anim') && !this.playerShieldSprite.anims.isPlaying) {
+        this.playerShieldSprite.play('fx_diamond_body_buff_anim');
       }
     } else {
       this.playerShieldSprite.setVisible(false);
@@ -419,6 +404,13 @@ export class BattleScene extends Phaser.Scene {
         sprite = this.monsterPool.pop() || this.add.sprite(m.x, m.y, '');
         sprite.setVisible(true);
         this.monsterSprites.set(m.id, sprite);
+
+        // Screen shake upon Boss or Milestone Elite arrival
+        if (m.isBoss) {
+          this.cameras.main.shake(650, 0.015);
+        } else if (m.isElite && (m.scale || 1) >= 1.9) {
+          this.cameras.main.shake(350, 0.008);
+        }
       }
 
       sprite.setPosition(m.x, m.y);
@@ -428,18 +420,23 @@ export class BattleScene extends Phaser.Scene {
       const { dirDigit, flipX } = getDirInfo(m.dir || 4);
       sprite.setFlipX(flipX);
 
+      // Scale & Imposing deterring aura
+      const finalScale = m.scale || (m.isBoss ? 2.85 : (m.isElite ? 1.75 : 1.0));
+      sprite.setScale(finalScale);
+
+      // Shadow & Glowing ground aura circle under feet
       if (m.isBoss) {
-        sprite.setScale(m.spriteKey === '20085' ? 1.25 : 1.48);
-        this.playerShadow.lineStyle(3, 0xff2a2a, 0.85);
-        this.playerShadow.strokeEllipse(m.x, m.y + 38, 96, 36);
+        this.playerShadow.fillStyle(0x000000, 0.55);
+        this.playerShadow.fillEllipse(m.x, m.y + 40, 120, 40);
       } else if (m.isElite) {
-        sprite.setScale(m.spriteKey === '20085' ? 1.05 : 1.22);
-        this.playerShadow.lineStyle(2, 0xd488ff, 0.85);
-        this.playerShadow.strokeEllipse(m.x, m.y + 34, 68, 26);
+        this.playerShadow.fillStyle(0x000000, 0.5);
+        this.playerShadow.fillEllipse(m.x, m.y + 32, 75, 26);
       } else {
-        sprite.setScale(m.spriteKey === '20085' ? 0.85 : 1.0);
+        this.playerShadow.fillStyle(0x000000, 0.35);
+        this.playerShadow.fillEllipse(m.x, m.y + 20, 42, 14);
       }
 
+      // Status Tints
       if (m.poisonUntil && game.clock < m.poisonUntil) {
         sprite.setTint(0x66ff88);
       } else if (m.burnUntil && game.clock < m.burnUntil) {
@@ -503,6 +500,41 @@ export class BattleScene extends Phaser.Scene {
         sprite.setVisible(false);
         this.minionPool.push(sprite);
         this.minionSprites.delete(id);
+      }
+    }
+  }
+
+  private syncDrops() {
+    const activeDropIds = new Set<number>();
+
+    for (const d of game.drops) {
+      if (d.type === 'exp' || d.type === 'gold') {
+        activeDropIds.add(d.id);
+        let sprite = this.dropSprites.get(d.id);
+        const tex = d.tier === 3 ? 'coin_3' : (d.tier === 2 ? 'coin_2' : 'coin_1');
+
+        if (!sprite) {
+          sprite = this.dropPool.pop() || this.add.sprite(d.x, d.y, tex);
+          sprite.setTexture(tex);
+          sprite.setOrigin(0.5, 0.7);
+          sprite.setVisible(true);
+          this.dropSprites.set(d.id, sprite);
+        } else if (sprite.texture.key !== tex) {
+          sprite.setTexture(tex);
+        }
+
+        const bob = Math.sin(game.clock * 4.5 + d.id) * 2.2;
+        sprite.setPosition(d.x, d.y + bob);
+        sprite.setDepth(d.y - 12);
+      }
+    }
+
+    // Recycle collected drops
+    for (const [id, sprite] of this.dropSprites.entries()) {
+      if (!activeDropIds.has(id)) {
+        sprite.setVisible(false);
+        this.dropPool.push(sprite);
+        this.dropSprites.delete(id);
       }
     }
   }
@@ -574,21 +606,23 @@ export class BattleScene extends Phaser.Scene {
     fx.on('animationcomplete', () => fx.destroy());
   }
 
-  private spawnTalismanProjectile(startX: number, startY: number, targetX: number, targetY: number) {
+  private spawnTalismanProjectile(startX: number, startY: number, targetX: number, targetY: number, level = 1) {
     const sy = startY - 18;
     const ty = targetY - 14;
     const dist = Math.hypot(targetX - startX, ty - sy);
 
+    const scaleMult = level === 4 ? 1.6 : (level >= 2 ? 1.25 : 0.95);
+
     if (this.anims.exists('fx_talisman_fly_anim') && dist > 28) {
       const proj = this.trackSprite(this.add.sprite(startX, sy, 'fx_3011'));
       proj.setOrigin(0.5, 0.5);
-      proj.setScale(0.92);
+      proj.setScale(scaleMult);
       proj.setDepth(Math.max(startY, targetY) + 40);
       proj.setRotation(Math.atan2(ty - sy, targetX - startX));
       proj.setBlendMode(Phaser.BlendModes.NORMAL);
       proj.play('fx_talisman_fly_anim');
 
-      const duration = Math.max(240, Math.min(420, Math.round(dist * 1.15)));
+      const duration = Math.max(220, Math.min(400, Math.round(dist * 1.1)));
       this.trackTween({
         targets: proj,
         x: targetX,
@@ -597,26 +631,30 @@ export class BattleScene extends Phaser.Scene {
         ease: 'Linear',
         onComplete: () => {
           proj.destroy();
-          this.spawnSkillEffect(targetX, targetY + 4, 'fx_3011', 'fx_talisman_hit_anim', targetY + 25, 0.94);
+          this.spawnSkillEffect(targetX, targetY + 4, 'fx_3011', 'fx_talisman_hit_anim', targetY + 25, scaleMult * 1.05);
         }
       });
     } else {
-      this.spawnSkillEffect(targetX, targetY + 4, 'fx_3011', 'fx_talisman_hit_anim', targetY + 25, 0.94);
+      this.spawnSkillEffect(targetX, targetY + 4, 'fx_3011', 'fx_talisman_hit_anim', targetY + 25, scaleMult * 1.05);
     }
   }
 
-  private spawnMeteorEffect(x: number, y: number, delayMs: number) {
-    this.scheduleFx(delayMs, () => {
-      const startX = x + 68;
-      const startY = y - 160;
-      const endY = y - 10;
+  private spawnMeteorProjectile(x: number, y: number, staggerIndex = 0, level = 1) {
+    const startY = y - 360;
+    const endY = y;
+    const delay = staggerIndex * 135;
 
+    const scaleMult = level === 4 ? 2.2 : (level === 3 ? 1.65 : (level === 2 ? 1.3 : 1.0));
+
+    this.scheduleFx(delay, () => {
+      if (level >= 4) {
+        this.cameras.main.shake(200, 0.007);
+      }
       if (this.anims.exists('fx_meteor_drop_anim')) {
-        const drop = this.trackSprite(this.add.sprite(startX, startY, 'fx_2202'));
+        const drop = this.trackSprite(this.add.sprite(x, startY, 'fx_2202'));
         drop.setOrigin(0.5, 0.5);
-        drop.setScale(0.92);
-        drop.setDepth(y + 80);
-        drop.setRotation(Math.atan2(endY - startY, x - startX));
+        drop.setScale(scaleMult);
+        drop.setDepth(y + 30);
         drop.setBlendMode(Phaser.BlendModes.NORMAL);
         drop.play('fx_meteor_drop_anim');
 
@@ -624,26 +662,27 @@ export class BattleScene extends Phaser.Scene {
           targets: drop,
           x,
           y: endY,
-          duration: 115,
+          duration: 120,
           ease: 'Quad.easeIn',
           onComplete: () => {
             drop.destroy();
-            this.spawnSkillEffect(x, endY, 'fx_2202', 'fx_meteor_boom_anim', y + 35, 0.92);
-            this.spawnSkillEffect(x, y - 16, 'fx_2011', 'fx_meteor_cast_anim', y + 42, 0.68);
+            this.spawnSkillEffect(x, endY, 'fx_2202', 'fx_meteor_boom_anim', y + 35, scaleMult * 0.95);
+            this.spawnSkillEffect(x, y - 16, 'fx_2011', 'fx_meteor_cast_anim', y + 42, scaleMult * 0.7);
           }
         });
       } else {
-        this.spawnSkillEffect(x, y - 16, 'fx_2011', 'fx_meteor_cast_anim', y + 42, 0.68);
+        this.spawnSkillEffect(x, y - 16, 'fx_2011', 'fx_meteor_cast_anim', y + 42, scaleMult * 0.7);
       }
     });
   }
 
-  private spawnDashEffect(startX: number, startY: number, targetX: number, targetY: number, dir: number) {
+  private spawnDashEffect(startX: number, startY: number, targetX: number, targetY: number, dir: number, level = 1) {
     const heroAtlas = HERO_ATLAS_MAP[this.currentHeroClass] || 'hero_5110501';
     const currentFrame = this.playerSprite.frame?.name;
     const { dirDigit, flipX } = getDirInfo(dir);
 
-    // Translucent cyan warrior afterimages bridging start -> arrival
+    const scaleMult = level >= 4 ? 2.1 : (level >= 2 ? 1.5 : 1.25);
+
     if (currentFrame) {
       for (const t of [0.22, 0.52, 0.8]) {
         const ax = startX + (targetX - startX) * t;
@@ -652,12 +691,12 @@ export class BattleScene extends Phaser.Scene {
         ghost.setOrigin(0.5, 0.5);
         ghost.setFlipX(flipX);
         ghost.setDepth(ay - 1);
-        ghost.setTint(0x66ccff);
-        ghost.setAlpha(0.62);
+        ghost.setTint(level >= 4 ? 0xffcc00 : 0x66ccff);
+        ghost.setAlpha(0.65);
         this.trackTween({
           targets: ghost,
           alpha: 0,
-          duration: 240,
+          duration: 250,
           ease: 'Quad.easeOut',
           onComplete: () => ghost.destroy()
         });
@@ -667,10 +706,9 @@ export class BattleScene extends Phaser.Scene {
     const animKey = `fx_dash_anim_d${dirDigit}`;
     if (!this.anims.exists(animKey)) return;
 
-    // Gliding dash slash traveling with the warrior
     const streak = this.trackSprite(this.add.sprite(startX, startY, 'fx_1010'));
     streak.setOrigin(0.5, 0.5);
-    streak.setScale(1.45);
+    streak.setScale(scaleMult);
     streak.setFlipX(flipX);
     streak.setDepth(Math.max(startY, targetY) + 25);
     streak.play(animKey);
@@ -683,9 +721,8 @@ export class BattleScene extends Phaser.Scene {
       ease: 'Quad.easeOut'
     });
 
-    // Crisp impact dash crescent at destination
     this.scheduleFx(45, () => {
-      this.spawnSkillEffect(targetX, targetY, 'fx_1010', animKey, targetY + 30, 1.55, flipX);
+      this.spawnSkillEffect(targetX, targetY, 'fx_1010', animKey, targetY + 30, scaleMult * 1.1, flipX);
     });
   }
 
@@ -697,11 +734,12 @@ export class BattleScene extends Phaser.Scene {
     };
 
     const fxTable: Record<string, { tex: string; anim: string; dy?: number; dDepth?: number; scale?: number; followPlayer?: boolean }> = {
-      level_up: { tex: 'level_up', anim: 'fx_level_up_anim', dy: -40, dDepth: 100, scale: 1.15 },
-      lightning: { tex: 'fx_2010', anim: 'fx_lightning_anim', dy: 14, dDepth: 200, scale: 0.8 },
+      level_up: { tex: 'level_up', anim: 'fx_level_up_anim', dy: -40, dDepth: 100, scale: 1.2 },
+      lightning: { tex: 'fx_2010', anim: 'fx_lightning_anim', dy: 14, dDepth: 200, scale: 0.85 },
       hell_thunder: { tex: 'fx_2003', anim: 'fx_hell_thunder_anim', dy: -6, dDepth: 15, scale: 1.0, followPlayer: true },
       poison: { tex: 'fx_3004', anim: 'fx_poison_anim', dy: -14, dDepth: 18, scale: 1.05 },
       diamond_body: { tex: 'fx_1008', anim: 'fx_diamond_body_cast_anim', dy: -6, dDepth: 12, scale: 1.25, followPlayer: true },
+      wind_shield: { tex: 'fx_2009', anim: 'fx_wind_shield_cast_anim', dy: -6, dDepth: 12, scale: 1.25, followPlayer: true },
       shinsu: { tex: 'fx_3007', anim: 'fx_shinsu_anim', dy: 6, dDepth: 20, scale: 1.15 },
       shinsu_hit: { tex: 'fx_2001', anim: 'fx_shinsu_hit_anim', dy: -10, dDepth: 25, scale: 0.78 },
       skeleton: { tex: 'fx_3012', anim: 'fx_skeleton_anim', dy: 10, dDepth: 20, scale: 0.88 }
@@ -712,6 +750,13 @@ export class BattleScene extends Phaser.Scene {
     let meteorIndex = 0;
 
     for (const e of newEffects) {
+      const lvl = e.level || 1;
+      const levelMult = lvl === 4 ? 2.15 : (lvl === 3 ? 1.65 : (lvl === 2 ? 1.3 : 1.0));
+
+      if (lvl >= 4) {
+        this.cameras.main.shake(220, 0.006);
+      }
+
       if (e.type === 'lightning' && !castPlayedThisTick.has('lightning')) {
         castPlayedThisTick.add('lightning');
         this.spawnSkillEffect(
@@ -720,7 +765,7 @@ export class BattleScene extends Phaser.Scene {
           'fx_2010',
           'fx_lightning_cast_anim',
           this.playerSprite.y + 15,
-          1.05
+          1.05 * levelMult
         );
       }
 
@@ -732,7 +777,7 @@ export class BattleScene extends Phaser.Scene {
           'fx_3004',
           'fx_poison_cast_anim',
           this.playerSprite.y + 15,
-          0.85
+          0.85 * levelMult
         );
       }
 
@@ -745,47 +790,39 @@ export class BattleScene extends Phaser.Scene {
             'fx_3011',
             'fx_talisman_cast_anim',
             this.playerSprite.y - 1,
-            0.85
+            0.85 * levelMult
           );
         }
-        this.spawnTalismanProjectile(
-          e.x,
-          e.y,
-          e.targetX ?? e.x,
-          e.targetY ?? e.y
-        );
+        if (e.targetX !== undefined && e.targetY !== undefined) {
+          this.spawnTalismanProjectile(e.x, e.y, e.targetX, e.targetY, lvl);
+        }
         continue;
       }
 
       if (e.type === 'meteor') {
-        this.spawnMeteorEffect(e.x, e.y, Math.min(160, meteorIndex * 45));
-        meteorIndex++;
+        this.spawnMeteorProjectile(e.x, e.y, meteorIndex++, lvl);
         continue;
       }
 
       if (e.type === 'dash') {
-        this.spawnDashEffect(
-          e.x,
-          e.y,
-          e.targetX ?? e.x,
-          e.targetY ?? e.y,
-          e.dir ?? game.player.dir
-        );
+        this.spawnDashEffect(e.x, e.y, e.targetX ?? e.x, e.targetY ?? e.y, e.dir ?? 4, lvl);
         continue;
       }
 
       const dirCfg = directionalFx[e.type];
       if (dirCfg) {
+        const rawDir = e.dir !== undefined ? e.dir : ((this.playerSprite as any)?.currentDir ?? 4);
+        const { dirDigit, flipX } = getDirInfo(rawDir);
+        const animKey = `${dirCfg.baseAnim}_d${dirDigit}`;
         const sx = dirCfg.followPlayer ? this.playerSprite.x : e.x;
         const sy = dirCfg.followPlayer ? this.playerSprite.y : e.y;
-        const { dirDigit, flipX } = getDirInfo(e.dir ?? game.player.dir);
         this.spawnSkillEffect(
           sx,
           sy + (dirCfg.dy || 0),
           dirCfg.tex,
-          `${dirCfg.baseAnim}_d${dirDigit}`,
+          animKey,
           sy + (dirCfg.dDepth || 0),
-          dirCfg.scale,
+          dirCfg.scale * levelMult,
           flipX
         );
         continue;
@@ -793,14 +830,16 @@ export class BattleScene extends Phaser.Scene {
 
       const cfg = fxTable[e.type];
       if (!cfg) continue;
+
       const sx = cfg.followPlayer ? this.playerSprite.x : e.x;
       const sy = cfg.followPlayer ? this.playerSprite.y : e.y;
-      let scale = cfg.scale || 1.0;
+      let scale = (cfg.scale || 1.0) * levelMult;
       if (e.radius && e.type === 'hell_thunder') {
-        scale = Math.max(0.85, Math.min(1.12, e.radius / 165));
+        scale = Math.max(0.85, (e.radius / 165) * levelMult);
       } else if (e.radius && e.type === 'poison') {
-        scale = Math.max(0.92, Math.min(1.18, e.radius / 115));
+        scale = Math.max(0.92, (e.radius / 115) * levelMult);
       }
+
       this.spawnSkillEffect(
         sx,
         sy + (cfg.dy || 0),
@@ -816,49 +855,59 @@ export class BattleScene extends Phaser.Scene {
     const gfx = this.uiGraphics;
     gfx.clear();
 
-    // 1. Monster overhead health bars
+    // 1. Glowing ground aura circle under feet of Elites and Boss
     for (const m of game.monsters) {
-      if (m.hp < m.maxHp) {
-        const barW = m.isBoss ? 70 : 36;
-        const barH = m.isBoss ? 6 : 4;
-        const bx = m.x - barW / 2;
-        const by = m.y - (m.isBoss ? 65 : 45);
+      if (m.isBoss || m.isElite) {
+        const auraRadius = (m.isBoss ? 82 : 46) + Math.sin(game.clock * 5) * 5;
+        const auraColor = m.isBoss ? 0xff0033 : 0xff9900;
+        gfx.lineStyle(m.isBoss ? 3.5 : 2.5, auraColor, 0.9);
+        gfx.strokeCircle(m.x, m.y + (m.isBoss ? 35 : 24), auraRadius);
+        gfx.fillStyle(auraColor, m.isBoss ? 0.22 : 0.16);
+        gfx.fillCircle(m.x, m.y + (m.isBoss ? 35 : 24), auraRadius);
 
-        // Bar background
-        gfx.fillStyle(0x000000, 0.7);
+        // Inner glowing ring
+        gfx.lineStyle(1.5, 0xffe58f, 0.7);
+        gfx.strokeCircle(m.x, m.y + (m.isBoss ? 35 : 24), auraRadius * 0.65);
+      }
+    }
+
+    // 2. Monster overhead health bars
+    for (const m of game.monsters) {
+      if (m.hp < m.maxHp || m.isElite || m.isBoss) {
+        const barW = m.isBoss ? 90 : (m.isElite ? 55 : 36);
+        const barH = m.isBoss ? 7 : (m.isElite ? 5 : 4);
+        const bx = m.x - barW / 2;
+        const by = m.y - (m.isBoss ? 85 : (m.isElite ? 62 : 45));
+
+        // Bar frame
+        gfx.fillStyle(0x000000, 0.75);
         gfx.fillRect(bx - 1, by - 1, barW + 2, barH + 2);
+
+        if (m.isElite) {
+          gfx.lineStyle(1.5, 0xffbb00, 0.9);
+          gfx.strokeRect(bx - 1, by - 1, barW + 2, barH + 2);
+        }
 
         // HP fill
         const ratio = Math.max(0, m.hp / m.maxHp);
-        gfx.fillStyle(m.isBoss ? 0xff2222 : 0xdd3333, 0.95);
+        gfx.fillStyle(m.isBoss ? 0xff0033 : (m.isElite ? 0xff9900 : 0xdd3333), 0.95);
         gfx.fillRect(bx, by, barW * ratio, barH);
       }
     }
 
-    // 2. Drops (exp crystal, gold, potion)
+    // 3. Potion drops (red bottle)
     for (const d of game.drops) {
-      if (d.type === 'exp') {
-        // Glowing cyan/green exp crystal
-        gfx.fillStyle(0x00ffcc, 0.9);
-        gfx.fillCircle(d.x, d.y, 6);
-        gfx.fillStyle(0xffffff, 0.9);
-        gfx.fillCircle(d.x, d.y, 2.5);
-      } else if (d.type === 'gold') {
-        // Gold coin
-        gfx.fillStyle(0xffdd00, 0.95);
-        gfx.fillCircle(d.x, d.y, 5);
-        gfx.lineStyle(1.5, 0x996600, 1);
-        gfx.strokeCircle(d.x, d.y, 5);
-      } else {
-        // Red potion bottle
+      if (d.type === 'potion') {
         gfx.fillStyle(0xff2244, 0.95);
         gfx.fillRect(d.x - 4, d.y - 6, 8, 12);
-        gfx.fillStyle(0xffffff, 0.8);
+        gfx.fillStyle(0xffffff, 0.85);
         gfx.fillRect(d.x - 2, d.y - 4, 3, 3);
+        gfx.fillStyle(0xa66300, 1.0);
+        gfx.fillRect(d.x - 2, d.y - 8, 4, 2);
       }
     }
 
-    // 3. Floating Damage Numbers
+    // 4. Floating Damage Numbers
     const activeTextIds = new Set<number>();
     for (const d of game.damageNumbers) {
       activeTextIds.add(d.id);
@@ -882,9 +931,7 @@ export class BattleScene extends Phaser.Scene {
       textObj.setPosition(d.x, d.y);
       textObj.setText(d.text);
       textObj.setColor(d.color);
-      textObj.setAlpha(Math.min(1, d.life * 2));
-      if (d.crit) textObj.setFontSize('20px');
-      else textObj.setFontSize('15px');
+      textObj.setAlpha(Math.min(1, d.life / 0.3));
     }
 
     for (const [id, textObj] of this.damageTexts.entries()) {
@@ -894,6 +941,78 @@ export class BattleScene extends Phaser.Scene {
         this.damageTexts.delete(id);
       }
     }
+  }
+
+  private createAnimFromAtlas(
+    animKey: string,
+    atlasKey: string,
+    prefix: string,
+    frameRate: number,
+    repeat = 0
+  ) {
+    if (this.anims.exists(animKey)) return;
+    if (!this.textures.exists(atlasKey)) return;
+    const tex = this.textures.get(atlasKey);
+    const frameNames = tex.getFrameNames().filter(f => f.startsWith(prefix)).sort();
+    if (frameNames.length === 0) return;
+
+    this.anims.create({
+      key: animKey,
+      frames: frameNames.map(f => ({ key: atlasKey, frame: f })),
+      frameRate,
+      repeat
+    });
+  }
+
+  private registerAllAnimations() {
+    // 1. Hero Walking (Run) & Idle (Stand) Animations
+    const heroList = [
+      { key: 'hero_5110501', id: '5110501' },
+      { key: 'hero_5120503', id: '5120503' },
+      { key: 'hero_5130503', id: '5130503' }
+    ];
+    for (const h of heroList) {
+      for (let dir = 0; dir <= 4; dir++) {
+        this.createAnimFromAtlas(`${h.key}_walk_${dir}`, h.key, `role/${h.id}/run/${dir}`, 12, -1);
+        this.createAnimFromAtlas(`${h.key}_idle_${dir}`, h.key, `role/${h.id}/stand/${dir}`, 4, -1);
+      }
+    }
+
+    // 2. Monster Walking Animations
+    for (const id of ['20038', '20046', '20072', '20081', '20082', '20085', '20111', '20112']) {
+      const atlasKey = `m_${id}`;
+      for (let dir = 0; dir <= 4; dir++) {
+        this.createAnimFromAtlas(`${atlasKey}_walk_${dir}`, atlasKey, `${id}/walk/${dir}`, 8, -1);
+        this.createAnimFromAtlas(`${atlasKey}_idle_${dir}`, atlasKey, `${id}/stand/${dir}`, 4, -1);
+      }
+    }
+
+    // 3. Directional Blade Arc, Fire Slash, Dash
+    for (let d = 0; d <= 4; d++) {
+      this.createAnimFromAtlas(`fx_blade_arc_anim_d${d}`, 'fx_1004', `1004/attack/${d}`, 15, 0);
+      this.createAnimFromAtlas(`fx_fire_slash_anim_d${d}`, 'fx_1006', `1006/attack/${d}`, 15, 0);
+      this.createAnimFromAtlas(`fx_dash_anim_d${d}`, 'fx_1010', `1010/attack/${d}`, 16, 0);
+    }
+
+    // 4. Authentic Skill Effects
+    this.createAnimFromAtlas('fx_level_up_anim', 'level_up', 'level_up/', 15, 0);
+    this.createAnimFromAtlas('fx_lightning_anim', 'fx_2010', '2010/hit/', 16, 0);
+    this.createAnimFromAtlas('fx_lightning_cast_anim', 'fx_2010', '2010/casting/', 15, 0);
+    this.createAnimFromAtlas('fx_hell_thunder_anim', 'fx_2003', '2003/hit/', 16, 0);
+    this.createAnimFromAtlas('fx_poison_anim', 'fx_3004', '3004/hit/', 12, 0);
+    this.createAnimFromAtlas('fx_poison_cast_anim', 'fx_3004', '3004/casting/', 14, 0);
+    this.createAnimFromAtlas('fx_diamond_body_buff_anim', 'fx_1008', '1008/loop/', 10, -1);
+    this.createAnimFromAtlas('fx_diamond_body_cast_anim', 'fx_1008', '1008/casting/', 14, 0);
+    this.createAnimFromAtlas('fx_wind_shield_cast_anim', 'fx_2009', '2009/loop/', 12, -1);
+    this.createAnimFromAtlas('fx_shinsu_anim', 'fx_3007', '3007/hit/', 14, 0);
+    this.createAnimFromAtlas('fx_shinsu_hit_anim', 'fx_2001', '2001/hit/', 14, 0);
+    this.createAnimFromAtlas('fx_skeleton_anim', 'fx_3012', '3012/hit/', 13, 0);
+    this.createAnimFromAtlas('fx_meteor_boom_anim', 'fx_2202', '2202/hit/', 16, 0);
+    this.createAnimFromAtlas('fx_meteor_drop_anim', 'fx_2202', '2202/track/', 16, 0);
+    this.createAnimFromAtlas('fx_meteor_cast_anim', 'fx_2011', '2011/casting/', 14, 0);
+    this.createAnimFromAtlas('fx_talisman_fly_anim', 'fx_3011', '3011/track/', 14, -1);
+    this.createAnimFromAtlas('fx_talisman_hit_anim', 'fx_3011', '3011/hit/', 15, 0);
+    this.createAnimFromAtlas('fx_talisman_cast_anim', 'fx_3011', '3011/casting/', 14, 0);
   }
 }
 
@@ -921,3 +1040,4 @@ export function bootPhaser() {
   gameInstance = new Phaser.Game(config);
   (window as any).__phaserGame = gameInstance;
 }
+

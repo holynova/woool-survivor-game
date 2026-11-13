@@ -972,6 +972,89 @@ html, body, #root {
   box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
 }
 
+/* Quality Tiers (凡品, 灵品, 极品, 绝世, 神武) */
+.woool-upgrade-card.quality-common {
+  border-color: #8c8c8c;
+}
+.woool-upgrade-card.quality-rare {
+  border-color: #52c41a;
+  box-shadow: 0 0 10px rgba(82, 196, 26, 0.25);
+}
+.woool-upgrade-card.quality-epic {
+  border-color: #1890ff;
+  box-shadow: 0 0 12px rgba(24, 144, 255, 0.3);
+}
+.woool-upgrade-card.quality-mythic {
+  border-color: #a855f7;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
+}
+.woool-upgrade-card.quality-legendary {
+  border-color: #faad14;
+  box-shadow: 0 0 18px rgba(250, 173, 20, 0.45);
+  background: linear-gradient(90deg, #2e2612 0%, #1e1910 100%);
+}
+
+.card-quality-pill {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 5;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px #000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.card-quality-pill.q-common {
+  background: #595959;
+  color: #f0f0f0;
+}
+.card-quality-pill.q-rare {
+  background: #237804;
+  color: #b7eb8f;
+  border-color: #52c41a;
+}
+.card-quality-pill.q-epic {
+  background: #0050b3;
+  color: #91d5ff;
+  border-color: #1890ff;
+}
+.card-quality-pill.q-mythic {
+  background: #531dab;
+  color: #d3adf7;
+  border-color: #a855f7;
+}
+.card-quality-pill.q-legendary {
+  background: #ad6800;
+  color: #fff1b8;
+  border-color: #faad14;
+}
+
+.slot-quality-badge {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  z-index: 4;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 0 2px;
+  border-radius: 2px;
+  line-height: 1.1;
+  text-shadow: 0 1px 2px #000;
+}
+.slot-quality-badge.q-common { color: #d9d9d9; }
+.slot-quality-badge.q-rare { color: #73d13d; }
+.slot-quality-badge.q-epic { color: #40a9ff; }
+.slot-quality-badge.q-mythic { color: #b37feb; }
+.slot-quality-badge.q-legendary { color: #ffc53d; }
+
+.woool-slot-box.quality-rare { border-bottom: 2px solid #52c41a; }
+.woool-slot-box.quality-epic { border-bottom: 2px solid #1890ff; }
+.woool-slot-box.quality-mythic { border-bottom: 2px solid #a855f7; }
+.woool-slot-box.quality-legendary { border-bottom: 2px solid #faad14; }
+
 .card-slot-box {
   position: relative;
   width: 58px;

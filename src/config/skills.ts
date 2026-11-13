@@ -1,21 +1,24 @@
 import type { SkillDefinition, PassiveDefinition } from '../types';
 
 export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
-  // --- 法师招牌技能 ---
+  // ==========================================
+  // --- 法师技能体系 (Wizard) ---
+  // ==========================================
   dragon_purple_lightning: {
     id: 'dragon_purple_lightning',
     name: '狂龙紫电',
     classType: 'wizard',
     iconId: 2010,
+    quality: 'mythic',
     desc: '传奇世界法师终极奥义！引九天紫霄狂雷贯穿苍穹，产生剧烈雷暴轰炸与连锁电弧。',
     cooldown: 1.65,
-    damage: 70,
-    area: 100,
-    range: 420,
+    damage: 72,
+    area: 110,
+    range: 440,
     soundKey: 'skill_lightning',
     maxLevel: 4,
     upgrades: [
-      { level: 1, title: '初悟紫电', description: '招引单道狂暴紫雷精准轰杀最近魔物，造成高额毁灭雷伤。' },
+      { level: 1, title: '初悟紫电', description: '招引单道狂暴紫雷精准轰杀最近魔物，造成毁灭雷伤。' },
       { level: 2, title: '雷龙狂舞', description: '伤害提升35%，狂雷炸裂附带小范围震荡波并向周围1个目标跳跃。' },
       { level: 3, title: '紫霄天罚', description: '伤害提升40%，降雷增至2道且电弧跳跃2个目标，麻痹魔物0.8秒。' },
       { level: 4, title: '【狂龙破天·质变】', description: '天降狂暴紫雷阵！全屏3道轰顶狂雷+3重跳跃电弧，消灭敌人引爆雷环！' }
@@ -26,6 +29,7 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '流星火雨',
     classType: 'wizard',
     iconId: 2011,
+    quality: 'mythic',
     desc: '从虚空中召唤密集的炽焰流星群轰击地面，产生持续火海灼烧。',
     cooldown: 3.4,
     damage: 68,
@@ -45,6 +49,7 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '地狱雷光',
     classType: 'wizard',
     iconId: 2003,
+    quality: 'epic',
     desc: '以施法者自身为核心爆发狂暴环形雷暴，瞬间重创贴身围困的所有魔物。',
     cooldown: 2.8,
     damage: 55,
@@ -64,9 +69,10 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '风影盾',
     classType: 'wizard',
     iconId: 2009,
+    quality: 'epic',
     desc: '唤起呼啸护体风灵力场，大幅提升敏捷闪避与移动速度，受击时气旋推开敌人。',
     cooldown: 6.0,
-    damage: 15,
+    damage: 18,
     area: 120,
     range: 0,
     soundKey: 'skill_shield',
@@ -78,17 +84,60 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
       { level: 4, title: '【极意风影·质变】', description: '踏风无痕！闪避率提升至50%，护盾破碎时全屏狂风刮飞全场魔物！' }
     ]
   },
+  ice_roar: {
+    id: 'ice_roar',
+    name: '冰咆哮',
+    classType: 'wizard',
+    iconId: 2004,
+    quality: 'epic',
+    desc: '在魔物群中唤起呼啸盘旋的暴风雪龙卷风，强力冰冻并绞碎范围内的敌人。',
+    cooldown: 3.2,
+    damage: 58,
+    area: 150,
+    range: 350,
+    soundKey: 'skill_iceroar',
+    maxLevel: 4,
+    upgrades: [
+      { level: 1, title: '寒风呼啸', description: '召唤旋转暴风雪，减速魔物40%并造成持续冰霜伤害。' },
+      { level: 2, title: '极地玄冰', description: '暴风雪范围扩大25%，伤害提高35%，冰冻概率提升。' },
+      { level: 3, title: '绝对零度', description: '暴风雪中心引发二次冰爆，重度减速所有受击敌人。' },
+      { level: 4, title: '【九幽冰狱·质变】', description: '全图暴风雪降临！受击魔物被彻底冰冻定身1.5秒并附带易伤！' }
+    ]
+  },
+  celestial_meteor: {
+    id: 'celestial_meteor',
+    name: '天外陨灭',
+    classType: 'wizard',
+    iconId: 2202,
+    quality: 'legendary',
+    desc: '法神至高禁咒！沟通域外星辰引落焚界巨型陨石，造成毁天灭地的范围爆轰！',
+    cooldown: 7.5,
+    damage: 180,
+    area: 260,
+    range: 420,
+    soundKey: 'skill_hellfire',
+    maxLevel: 4,
+    upgrades: [
+      { level: 1, title: '星辰初坠', description: '引落一颗超巨型金色陨石，轰碎落点魔物。' },
+      { level: 2, title: '炎浪滔天', description: '落点引发大范围金色冲击波，造成持续熔岩灼烧。' },
+      { level: 3, title: '双星贯日', description: '连续坠落两颗陨石，暴击伤害提升50%。' },
+      { level: 4, title: '【太古灭世·质变】', description: '灭世天崩！引爆全场地面裂缝，秒杀非精英脆皮怪物！' }
+    ]
+  },
 
-  // --- 战士招牌技能 ---
+  // ==========================================
+  // --- 战士技能体系 (Warrior) ---
+  // ==========================================
   moon_blade: {
     id: 'moon_blade',
     name: '抱月刀',
     classType: 'warrior',
     iconId: 1004,
+    quality: 'epic',
     desc: '传奇世界战士核心清怪绝学！挥刀狂旋360度释放半月弧光刀气，斩杀四面合围的敌群。',
     cooldown: 1.65,
-    damage: 54,
-    area: 130,
+    damage: 56,
+    area: 135,
     range: 0,
     soundKey: 'skill_slash',
     maxLevel: 4,
@@ -104,11 +153,12 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '突斩',
     classType: 'warrior',
     iconId: 1010,
+    quality: 'epic',
     desc: '传世战神霸道绝伦的冲锋位移！向前狂猛冲撞推土机般推挤并碾碎前方所有敌人。',
     cooldown: 3.5,
-    damage: 60,
-    area: 100,
-    range: 220,
+    damage: 62,
+    area: 105,
+    range: 240,
     soundKey: 'skill_repel',
     maxLevel: 4,
     upgrades: [
@@ -123,9 +173,10 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '金刚护体',
     classType: 'warrior',
     iconId: 1008,
+    quality: 'mythic',
     desc: '运集全身气血凝聚不灭金刚佛光，获得巨额免伤与受击狂暴荆棘反弹。',
     cooldown: 8.0,
-    damage: 25,
+    damage: 28,
     area: 140,
     range: 0,
     soundKey: 'skill_holyword',
@@ -142,11 +193,12 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '烈火剑法',
     classType: 'warrior',
     iconId: 1006,
+    quality: 'mythic',
     desc: '引火元素于剑刃之上，挥出毁天灭地的纯阳火剑气，直取妖魔首级。',
     cooldown: 3.2,
-    damage: 110,
-    area: 90,
-    range: 120,
+    damage: 115,
+    area: 95,
+    range: 130,
     soundKey: 'skill_fireball',
     maxLevel: 4,
     upgrades: [
@@ -156,18 +208,41 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
       { level: 4, title: '【火神破天·质变】', description: '烈火暴击率达到100%！被击败的目标产生大爆炸连环引燃！' }
     ]
   },
+  thunder_sword: {
+    id: 'thunder_sword',
+    name: '雷霆剑法',
+    classType: 'warrior',
+    iconId: 1102,
+    quality: 'legendary',
+    desc: '武圣无上剑意！引九天金雷贯入战刃，斩出撕裂天地的狂暴雷光金刃！',
+    cooldown: 5.2,
+    damage: 150,
+    area: 160,
+    range: 220,
+    soundKey: 'skill_lightning',
+    maxLevel: 4,
+    upgrades: [
+      { level: 1, title: '雷霆初动', description: '劈出一道贯穿雷霆战刃，斩裂前方直线敌人。' },
+      { level: 2, title: '金雷破空', description: '剑刃宽度扩大50%，附带麻痹敌人1秒。' },
+      { level: 3, title: '雷龙震天', description: '剑气命中魔物分裂出两道旋转雷光旋风。' },
+      { level: 4, title: '【万剑归宗·质变】', description: '雷霆金剑如暴雨般从天而降，轰平全场所有妖魔！' }
+    ]
+  },
 
-  // --- 道士招牌技能 ---
+  // ==========================================
+  // --- 道士技能体系 (Taoist) ---
+  // ==========================================
   enhanced_skeleton: {
     id: 'enhanced_skeleton',
     name: '强化骷髅术',
     classType: 'taoist',
     iconId: 3012,
+    quality: 'mythic',
     desc: '传世道士最帅绝技！召唤手持双柄巨板斧的狂暴强化骷髅，自动全图疯狗般追斩魔物！',
     cooldown: 5.0,
-    damage: 42,
-    area: 70,
-    range: 500,
+    damage: 44,
+    area: 75,
+    range: 520,
     soundKey: 'skill_shinsu',
     maxLevel: 4,
     upgrades: [
@@ -182,11 +257,12 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '幽冥火咒',
     classType: 'taoist',
     iconId: 3011,
+    quality: 'epic',
     desc: '道家天机秘术，唤出幽蓝摄魄的冥火神符，回旋飞舞后锁敌轰杀。',
     cooldown: 1.65,
-    damage: 56,
-    area: 90,
-    range: 400,
+    damage: 58,
+    area: 95,
+    range: 420,
     soundKey: 'skill_talisman',
     maxLevel: 4,
     upgrades: [
@@ -201,11 +277,12 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '施毒术',
     classType: 'taoist',
     iconId: 3004,
+    quality: 'rare',
     desc: '提炼红绿双色秘制奇毒，绿毒噬肉腐血，红毒蚀骨破防。',
     cooldown: 3.6,
-    damage: 24,
-    area: 150,
-    range: 300,
+    damage: 26,
+    area: 155,
+    range: 320,
     soundKey: 'skill_poison',
     maxLevel: 4,
     upgrades: [
@@ -220,11 +297,12 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '召唤神兽',
     classType: 'taoist',
     iconId: 3007,
+    quality: 'mythic',
     desc: '沟通上古神境召唤赤焰麒麟圣兽，吐出炽烈龙炎喷射扇形敌群。',
     cooldown: 7.0,
-    damage: 60,
-    area: 120,
-    range: 450,
+    damage: 64,
+    area: 125,
+    range: 460,
     soundKey: 'skill_shinsu',
     maxLevel: 4,
     upgrades: [
@@ -232,6 +310,26 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
       { level: 2, title: '神兽狂怒', description: '神兽血量增加100%，龙炎喷射射程延长40%。' },
       { level: 3, title: '圣兽烈阳', description: '神兽普通攻击附带击退，吐息造成持续地面火线。' },
       { level: 4, title: '【天尊金乌神兽·质变】', description: '晋升为金色麒麟巨神兽！周期性召唤天火流星辅助主人！' }
+    ]
+  },
+  lion_roar: {
+    id: 'lion_roar',
+    name: '狮子吼',
+    classType: 'taoist',
+    iconId: 3303,
+    quality: 'legendary',
+    desc: '天尊梵音狮子吼！一吼震撼万古乾坤，震碎周围一切魔物心胆，全图麻痹定身！',
+    cooldown: 8.5,
+    damage: 90,
+    area: 250,
+    range: 0,
+    soundKey: 'skill_holyword',
+    maxLevel: 4,
+    upgrades: [
+      { level: 1, title: '佛门狮吼', description: '震吼波击退周围魔物，定身定魄1.2秒。' },
+      { level: 2, title: '梵音灌顶', description: '范围扩大35%，吼伤魔物造成护甲破碎40%。' },
+      { level: 3, title: '金狮真身', description: '召唤太古金狮虚影咆哮，全场魔物陷入混乱互相攻击！' },
+      { level: 4, title: '【万佛朝宗·质变】', description: '天尊梵音洗涤苍生！定身全屏怪物3秒并造成巨额无视防御神圣伤害！' }
     ]
   }
 };

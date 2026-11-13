@@ -9,19 +9,19 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
     id: 'scarecrow',
     name: '稻草人',
     hp: 85,
-    speed: 78,
+    speed: 68, // Slow meat shield
     damage: 13,
-    exp: 3,
+    exp: 4,
     radius: 24,
     spriteKey: '20112'
   },
   deer: {
     id: 'deer',
     name: '狂暴角鹿',
-    hp: 78,
-    speed: 104,
-    damage: 14,
-    exp: 4,
+    hp: 82,
+    speed: 120, // Medium charger
+    damage: 15,
+    exp: 5,
     radius: 24,
     spriteKey: '20072'
   },
@@ -29,19 +29,19 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
     id: 'snake',
     name: '剧毒蟒蛇',
     hp: 55,
-    speed: 112,
-    damage: 15,
-    exp: 3,
+    speed: 185, // Ultra fast slitherer
+    damage: 16,
+    exp: 4,
     radius: 20,
     spriteKey: '20038'
   },
   wild_boar: {
     id: 'wild_boar',
     name: '红野猪',
-    hp: 175,
-    speed: 88,
-    damage: 18,
-    exp: 6,
+    hp: 185,
+    speed: 105, // Heavy charger
+    damage: 19,
+    exp: 7,
     radius: 26,
     spriteKey: '20046'
   },
@@ -49,9 +49,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
     id: 'blade_hound',
     name: '妖化刀犬',
     hp: 135,
-    speed: 115,
-    damage: 19,
-    exp: 5,
+    speed: 172, // Fast flanking rusher
+    damage: 20,
+    exp: 6,
     radius: 25,
     spriteKey: '20111'
   },
@@ -59,29 +59,29 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
     id: 'skeleton',
     name: '白骨骷髅',
     hp: 240,
-    speed: 82,
-    damage: 21,
-    exp: 8,
+    speed: 88, // Relentless marching horde
+    damage: 22,
+    exp: 9,
     radius: 27,
     spriteKey: '20081'
   },
   enhanced_skeleton: {
     id: 'enhanced_skeleton',
     name: '双斧骷髅将',
-    hp: 380,
-    speed: 95,
-    damage: 26,
-    exp: 15,
+    hp: 420,
+    speed: 82, // Tanky dual axe warrior
+    damage: 28,
+    exp: 18,
     radius: 30,
     spriteKey: '20082'
   },
   shinsu_puppet: {
     id: 'shinsu_puppet',
     name: '赤炎兽傀儡',
-    hp: 620,
-    speed: 85,
-    damage: 32,
-    exp: 22,
+    hp: 680,
+    speed: 62, // Slow colossal tank
+    damage: 36,
+    exp: 28,
     radius: 34,
     spriteKey: '20085'
   }

@@ -1,5 +1,5 @@
 import React, { useState, useSyncExternalStore, useEffect } from 'react';
-import { game } from './game';
+import { game, getQualityBadge, getQualityColor } from './game';
 import { WOOWL_SKILLS, WOOWL_PASSIVES } from './config/skills';
 import { WOOWL_CHAPTERS } from './config/chapters';
 import { WOOWL_DIFFICULTY_CURVES } from './config/curves';
@@ -8,7 +8,7 @@ import { sound } from './audio';
 import { bootPhaser } from './renderer';
 import { assetUrl } from './utils';
 
-const APP_VERSION = 'v0.2.3';
+const APP_VERSION = 'v0.2.4';
 const GITHUB_REPO_URL = 'https://github.com/holynova/woool-survivor-game';
 
 function useGameState() {
@@ -38,7 +38,7 @@ export function App() {
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   const handleStartGame = () => {
@@ -336,11 +336,12 @@ export function App() {
                     const maxCd = s.maxCd || def.cooldown || 2.0;
                     const cdRatio = s.cdTimer > 0 ? Math.min(1, Math.max(0, s.cdTimer / maxCd)) : 0;
                     const isReady = s.cdTimer <= 0;
+                    const quality = def.quality || 'common';
                     return (
                       <div
                         key={s.id}
-                        className={`woool-slot-box ${isReady ? 'is-ready' : 'is-cooling'}`}
-                        title={`${def.name} Lv.${s.level} (基础冷却: ${def.cooldown}秒)`}
+                        className={`woool-slot-box ${isReady ? 'is-ready' : 'is-cooling'} quality-${quality}`}
+                        title={`${def.name} Lv.${s.level} · 【${getQualityBadge(quality)}】(基础冷却: ${def.cooldown}秒)`}
                       >
                         <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
                         <img src={assetUrl(`assets/woool/skills/${def.iconId}.png`)} className="slot-icon" alt={def.name} />
@@ -351,6 +352,7 @@ export function App() {
                           </>
                         )}
                         <span className="slot-badge">Lv.{s.level}</span>
+                        <span className={`slot-quality-badge q-${quality}`}>{getQualityBadge(quality)}</span>
                         <span className="slot-hotkey">{idx + 1}</span>
                       </div>
                     );
@@ -407,15 +409,21 @@ export function App() {
                 const choiceIconPath = choice.type === 'passive' || choice.iconId > 100000
                   ? `assets/woool/items/${choice.iconId}.png`
                   : `assets/woool/skills/${choice.iconId}.png`;
+                const quality = choice.quality || 'common';
                 return (
                   <div
                     key={`${choice.id}_${idx}`}
-                    className="woool-upgrade-card"
+                    className={`woool-upgrade-card quality-${quality}`}
                     onClick={() => handleSelectUpgrade(choice)}
                   >
                     <div className="card-slot-box">
                       <img src={assetUrl('assets/woool/ui/item_bg.png')} className="card-item-bg" alt="" />
                       <img src={assetUrl(choiceIconPath)} className="card-icon" alt={choice.title} />
+                      {choice.type === 'skill' && (
+                        <span className={`card-quality-pill q-${quality}`}>
+                          {getQualityBadge(quality)}
+                        </span>
+                      )}
                       <span className={`card-type-tag ${choice.isNew ? 'tag-new' : 'tag-upgrade'}`}>
                         {choice.isNew ? '初次习得' : '境界突破'}
                       </span>

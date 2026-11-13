@@ -4,11 +4,14 @@ export type GamePhase = 'lobby' | 'battle' | 'level_up' | 'game_over' | 'victory
 
 export type DifficultyCurveId = 'casual' | 'standard' | 'surge' | 'hell';
 
+export type SkillQuality = 'common' | 'rare' | 'epic' | 'mythic' | 'legendary';
+
 export interface SkillDefinition {
   id: string;
   name: string;
   classType: HeroClass | 'all';
   iconId: number; // e.g. 2010 for 狂龙紫电
+  quality: SkillQuality;
   desc: string;
   cooldown: number; // in seconds
   damage: number;
@@ -91,8 +94,10 @@ export interface MonsterEntity {
   damage: number;
   exp: number;
   radius: number;
+  scale?: number;
   isBoss?: boolean;
   isElite?: boolean;
+  isSuperBoss?: boolean;
   color?: number;
   animKey?: string;
   spriteKey?: string;
@@ -104,6 +109,7 @@ export interface MonsterEntity {
   burnDps?: number;
   armorBreak?: number;
   dashCd?: number;
+  burstTimer?: number;
 }
 
 export interface MinionEntity {
@@ -127,6 +133,7 @@ export interface DropEntity {
   x: number;
   y: number;
   value: number;
+  tier?: 1 | 2 | 3;
 }
 
 export interface DamageNumber {
@@ -165,6 +172,7 @@ export interface EffectEvent {
   dir?: number;
   radius?: number;
   color?: number;
+  level?: number;
 }
 
 export interface MonsterArchetype {

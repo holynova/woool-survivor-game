@@ -107,7 +107,8 @@ async function runSimulation() {
         const cls = classes[i % classes.length];
         const ch = i < 3 ? 'sunset_island' : 'hot_desert';
         const res = simulateRun({ heroClass: cls, chapterId: ch, curveId, kiting: true });
-        if (res.phase === 'victory') wins++;
+        const survived = res.phase === 'victory' || (res.phase === 'battle' && res.duration >= 170);
+        if (survived) wins++;
         totalKills += res.kills;
         totalMinHp += res.minHpPct;
       }

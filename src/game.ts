@@ -2,6 +2,7 @@ import type {
   HeroClass,
   GamePhase,
   DifficultyCurveId,
+  SkillQuality,
   PlayerState,
   ActiveSkillState,
   ActivePassiveState,
@@ -20,8 +21,30 @@ import {
 } from './config/curves';
 import { sound } from './audio';
 
-export const WORLD_WIDTH = 3840;
-export const WORLD_HEIGHT = 2160;
+export const WORLD_WIDTH = 4800;
+export const WORLD_HEIGHT = 3200;
+
+export function getQualityBadge(quality: SkillQuality = 'common'): string {
+  switch (quality) {
+    case 'common': return '凡品';
+    case 'rare': return '灵品';
+    case 'epic': return '极品';
+    case 'mythic': return '绝世';
+    case 'legendary': return '神武';
+    default: return '凡品';
+  }
+}
+
+export function getQualityColor(quality: SkillQuality = 'common'): string {
+  switch (quality) {
+    case 'common': return '#d1d8e0';
+    case 'rare': return '#52c41a';
+    case 'epic': return '#1890ff';
+    case 'mythic': return '#a855f7';
+    case 'legendary': return '#faad14';
+    default: return '#d1d8e0';
+  }
+}
 
 export function calcDirection(dx: number, dy: number): number {
   const angle = Math.atan2(dy, dx);
@@ -44,6 +67,7 @@ export class GameEngine {
   bossDefeated = false;
 
   private eliteTimer = 0;
+  private spawnedMilestones = new Set<number>();
   private spawnAccumulator = 0;
   private statusTickTimer = 0;
   private shieldReduction = 0.4;
@@ -93,6 +117,7 @@ export class GameEngine {
     title: string;
     description: string;
     iconId: number;
+    quality?: SkillQuality;
   }> = [];
 
   version = 0;
@@ -132,6 +157,7 @@ export class GameEngine {
     this.waveProgress = 0;
     this.waveTimer = 0;
     this.eliteTimer = 0;
+    this.spawnedMilestones.clear();
     this.spawnAccumulator = 0;
     this.statusTickTimer = 0;
     this.bossSpawned = false;
@@ -158,6 +184,7 @@ export class GameEngine {
     this.waveProgress = 0;
     this.waveTimer = 0;
     this.eliteTimer = 0;
+    this.spawnedMilestones.clear();
     this.spawnAccumulator = 0;
     this.statusTickTimer = 0;
     this.bossSpawned = false;
@@ -308,7 +335,8 @@ export class GameEngine {
           id: this.nextEntityId++,
           type: 'lightning',
           x: mainTarget.x,
-          y: mainTarget.y
+          y: mainTarget.y,
+          level
         });
 
         // Localized electric shockwave splash around the single strike point
@@ -339,7 +367,8 @@ export class GameEngine {
               id: this.nextEntityId++,
               type: 'lightning',
               x: c.x,
-              y: c.y
+              y: c.y,
+              level
             });
           }
         }
@@ -362,7 +391,8 @@ export class GameEngine {
         x: this.player.x,
         y: this.player.y,
         dir: bladeDir,
-        radius: reach
+        radius: reach,
+        level
       });
 
       const knockbackDist = level >= 2 ? 75 : 52;
@@ -420,7 +450,8 @@ export class GameEngine {
           x: this.player.x,
           y: this.player.y,
           targetX: t.x,
-          targetY: t.y
+          targetY: t.y,
+          level
         });
       }
       return true;
@@ -446,7 +477,8 @@ export class GameEngine {
           type: 'meteor',
           x: impactX,
           y: impactY,
-          radius: finalArea
+          radius: finalArea,
+          level
         });
 
         const inArea = this.monsters.filter(m => Math.hypot(m.x - impactX, m.y - impactY) <= finalArea);
@@ -473,7 +505,8 @@ export class GameEngine {
         type: 'hell_thunder',
         x: this.player.x,
         y: this.player.y,
-        radius: reach
+        radius: reach,
+        level
       });
 
       const hits = level >= 3 ? 2 : 1;
@@ -504,7 +537,8 @@ export class GameEngine {
         type: 'poison',
         x: target.x,
         y: target.y,
-        radius: cloudRadius
+        radius: cloudRadius,
+        level
       });
 
       for (const m of inRange) {
@@ -555,7 +589,8 @@ export class GameEngine {
         targetX: clampedX,
         targetY: clampedY,
         dir: this.player.dir,
-        radius: impactR
+        radius: impactR,
+        level
       });
 
       const inPath = this.monsters.filter(m => Math.hypot(m.x - this.player.x, m.y - this.player.y) <= impactR);
@@ -576,7 +611,8 @@ export class GameEngine {
         type: 'diamond_body',
         x: this.player.x,
         y: this.player.y,
-        radius: 65
+        radius: 65,
+        level
       });
       return true;
     }
@@ -590,7 +626,8 @@ export class GameEngine {
         type: 'wind_shield',
         x: this.player.x,
         y: this.player.y,
-        radius: finalArea
+        radius: finalArea,
+        level
       });
       const nearby = this.monsters.filter(m => Math.hypot(m.x - this.player.x, m.y - this.player.y) <= finalArea);
       for (const m of nearby) {
@@ -615,7 +652,8 @@ export class GameEngine {
         type: 'fire_slash',
         x: this.player.x + fireDx * 0.15,
         y: this.player.y + fireDy * 0.15,
-        dir: calcDirection(fireDx, fireDy)
+        dir: calcDirection(fireDx, fireDy),
+        level
       });
 
       const burstMult = level >= 4 ? 1.8 : 1.45;
@@ -625,8 +663,89 @@ export class GameEngine {
         this.damageEnemy(m, Math.round(finalDamage * burstMult), true);
         if (level >= 2) {
           m.burnUntil = Math.max(m.burnUntil || 0, this.clock + 3.0);
-          m.burnDps = Math.max(m.burnDps || 0, Math.round(finalDamage * 0.45));
         }
+      }
+      return true;
+    }
+
+    if (id === 'ice_roar') {
+      const target = this.findNearestEnemy(this.player.x, this.player.y, def.range);
+      if (!target) return false;
+      sound.play(def.soundKey);
+      const iceRadius = finalArea * (level >= 3 ? 1.3 : 1.0);
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'poison',
+        x: target.x,
+        y: target.y,
+        radius: iceRadius,
+        level
+      });
+      const inRange = this.monsters.filter(m => Math.hypot(m.x - target.x, m.y - target.y) <= iceRadius);
+      for (const m of inRange) {
+        m.slowUntil = Math.max(m.slowUntil || 0, this.clock + (level >= 4 ? 3.5 : 2.2));
+        if (level >= 4) m.stunUntil = Math.max(m.stunUntil || 0, this.clock + 1.2);
+        this.damageEnemy(m, finalDamage, level >= 3);
+      }
+      return true;
+    }
+
+    if (id === 'celestial_meteor') {
+      const target = this.findNearestEnemy(this.player.x, this.player.y, def.range);
+      if (!target) return false;
+      sound.play(def.soundKey);
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'meteor',
+        x: target.x,
+        y: target.y,
+        radius: finalArea,
+        level: 4
+      });
+      const inRange = this.monsters.filter(m => Math.hypot(m.x - target.x, m.y - target.y) <= finalArea);
+      for (const m of inRange) {
+        this.damageEnemy(m, finalDamage, true);
+        m.burnUntil = Math.max(m.burnUntil || 0, this.clock + 4.0);
+        m.burnDps = Math.max(m.burnDps || 0, Math.round(finalDamage * 0.4));
+      }
+      return true;
+    }
+
+    if (id === 'thunder_sword') {
+      const targets = this.findNearestEnemies(this.player.x, this.player.y, def.range, 3);
+      if (targets.length === 0) return false;
+      sound.play(def.soundKey);
+      for (const t of targets) {
+        this.effects.push({
+          id: this.nextEntityId++,
+          type: 'lightning',
+          x: t.x,
+          y: t.y,
+          level
+        });
+        this.damageEnemy(t, finalDamage, true);
+        if (level >= 2) t.stunUntil = Math.max(t.stunUntil || 0, this.clock + 0.8);
+      }
+      return true;
+    }
+
+    if (id === 'lion_roar') {
+      sound.play(def.soundKey);
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'hell_thunder',
+        x: this.player.x,
+        y: this.player.y,
+        radius: finalArea,
+        level
+      });
+      const inRange = this.monsters.filter(m => Math.hypot(m.x - this.player.x, m.y - this.player.y) <= finalArea);
+      for (const m of inRange) {
+        m.stunUntil = Math.max(m.stunUntil || 0, this.clock + (level >= 4 ? 2.8 : 1.4));
+        this.damageEnemy(m, finalDamage, true);
+        const ang = Math.atan2(m.y - this.player.y, m.x - this.player.x);
+        m.x += Math.cos(ang) * 90;
+        m.y += Math.sin(ang) * 90;
       }
       return true;
     }
@@ -727,7 +846,21 @@ export class GameEngine {
       }
     }
 
-    // Periodic Elite Spawn
+    // Check 5-minute milestone elites (300s, 600s, 900s)
+    if (this.clock >= 300 && !this.spawnedMilestones.has(300)) {
+      this.spawnedMilestones.add(300);
+      this.spawnMilestoneElite(1);
+    }
+    if (this.clock >= 600 && !this.spawnedMilestones.has(600)) {
+      this.spawnedMilestones.add(600);
+      this.spawnMilestoneElite(2);
+    }
+    if (this.clock >= 900 && !this.spawnedMilestones.has(900)) {
+      this.spawnedMilestones.add(900);
+      this.spawnMilestoneElite(3);
+    }
+
+    // Periodic Minor Elite Spawn
     this.eliteTimer += dt;
     if (this.eliteTimer >= curve.eliteInterval) {
       this.eliteTimer = 0;
@@ -742,7 +875,7 @@ export class GameEngine {
       this.spawnBoss();
     }
 
-    // Move monsters & handle Boss surge & melee hits
+    // Move monsters & handle diverse AI behaviors
     const meleeAttackers: MonsterEntity[] = [];
     for (const m of this.monsters) {
       if (m.stunUntil && this.clock < m.stunUntil) {
@@ -759,19 +892,51 @@ export class GameEngine {
         moveSpeed *= 0.55;
       }
 
-      // Boss fierce surge every 5-6s
-      if (m.isBoss && dist > 90 && dist < 440) {
+      // Differentiated movement AI:
+      let vx = (dx / dist) * moveSpeed;
+      let vy = (dy / dist) * moveSpeed;
+
+      if (m.typeId === 'snake') {
+        // Fast slithering serpentine wiggle
+        const perpX = (-dy / dist) * Math.sin(this.clock * 7.5 + m.id) * 60;
+        const perpY = (dx / dist) * Math.sin(this.clock * 7.5 + m.id) * 60;
+        vx += perpX;
+        vy += perpY;
+      } else if (m.typeId === 'blade_hound') {
+        // Flanks around player at medium range then pounces
+        if (dist > 150 && dist < 360) {
+          const flankAng = Math.atan2(dy, dx) + (m.id % 2 === 0 ? 0.65 : -0.65);
+          vx = Math.cos(flankAng) * moveSpeed * 1.1;
+          vy = Math.sin(flankAng) * moveSpeed * 1.1;
+        }
+      } else if (m.typeId === 'wild_boar') {
+        // Angry sprint burst when close
+        m.dashCd = (m.dashCd ?? 4.0) - dt;
+        if (m.dashCd <= 0 && dist < 260) {
+          m.burstTimer = 1.25;
+          m.dashCd = 5.5;
+        }
+        if (m.burstTimer && m.burstTimer > 0) {
+          m.burstTimer -= dt;
+          vx *= 1.6;
+          vy *= 1.6;
+        }
+      }
+
+      // Boss & Elite surge every 5-6s
+      if ((m.isBoss || m.isElite) && dist > 100 && dist < 480) {
         m.dashCd = (m.dashCd ?? 5.0) - dt;
         if (m.dashCd <= 0) {
-          m.dashCd = this.difficultyId === 'hell' ? 4.2 : 5.8;
-          moveSpeed *= 3.0;
-          this.addDamageNumber(m.x, m.y - 30, '狂暴突袭!', '#ff5252', true);
+          m.dashCd = m.isBoss ? 4.2 : 5.8;
+          vx *= 2.5;
+          vy *= 2.5;
+          this.addDamageNumber(m.x, m.y - 30, m.isBoss ? '【魔主狂暴！】' : '【野性冲锋！】', '#ff3333', true);
         }
       }
 
       if (dist > m.radius + 14) {
-        m.x = Math.max(70, Math.min(WORLD_WIDTH - 70, m.x + (dx / dist) * moveSpeed * dt));
-        m.y = Math.max(70, Math.min(WORLD_HEIGHT - 70, m.y + (dy / dist) * moveSpeed * dt));
+        m.x = Math.max(70, Math.min(WORLD_WIDTH - 70, m.x + vx * dt));
+        m.y = Math.max(70, Math.min(WORLD_HEIGHT - 70, m.y + vy * dt));
       } else {
         meleeAttackers.push(m);
       }
@@ -844,7 +1009,8 @@ export class GameEngine {
       speed: finalSpeed,
       damage: finalDmg,
       exp: finalExp,
-      radius: isElite ? Math.round(arch.radius * 1.2) : arch.radius,
+      radius: isElite ? Math.round(arch.radius * 1.45) : arch.radius,
+      scale: isElite ? 1.7 : 1.0,
       isElite,
       spriteKey: arch.spriteKey
     });
@@ -852,6 +1018,65 @@ export class GameEngine {
     if (isElite) {
       this.addDamageNumber(x, y - 20, `【精英 ${arch.name} 来袭】`, '#c084fc', true);
     }
+  }
+
+  private spawnMilestoneElite(tier: 1 | 2 | 3) {
+    const chap = WOOWL_CHAPTERS[this.chapterId] || WOOWL_CHAPTERS.sunset_island;
+    const curve = WOOWL_DIFFICULTY_CURVES[this.difficultyId] || WOOWL_DIFFICULTY_CURVES.standard;
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 540;
+    const x = Math.max(120, Math.min(WORLD_WIDTH - 120, this.player.x + Math.cos(angle) * dist));
+    const y = Math.max(120, Math.min(WORLD_HEIGHT - 120, this.player.y + Math.sin(angle) * dist));
+
+    let name = '【五分境霸·狂暴尸王将】';
+    let spriteKey = '20082';
+    let scale = 1.95;
+    let baseHp = 3600;
+    let baseDmg = 32;
+    let exp = 80;
+    let radius = 48;
+
+    if (tier === 2) {
+      name = '【十分境霸·赤炎魔战傀】';
+      spriteKey = '20085';
+      scale = 2.2;
+      baseHp = 8200;
+      baseDmg = 42;
+      exp = 160;
+      radius = 56;
+    } else if (tier === 3) {
+      name = '【十五分霸主·通天修罗卫】';
+      spriteKey = '20082';
+      scale = 2.4;
+      baseHp = 15000;
+      baseDmg = 52;
+      exp = 300;
+      radius = 64;
+    }
+
+    const hp = Math.round(baseHp * curve.hpMult * (1 + (chap.chapterDifficulty - 1) * 0.45));
+    const dmg = Math.round(baseDmg * curve.dmgMult * (1 + (chap.chapterDifficulty - 1) * 0.35));
+
+    this.monsters.push({
+      id: this.nextEntityId++,
+      typeId: 'elite_milestone',
+      name,
+      x,
+      y,
+      hp,
+      maxHp: hp,
+      speed: Math.round(108 * curve.speedMult),
+      damage: dmg,
+      exp,
+      radius,
+      scale,
+      isElite: true,
+      dashCd: 4.5,
+      spriteKey
+    });
+
+    this.addDamageNumber(x, y - 25, `【领主降临】${name}`, '#ff4400', true);
   }
 
   private spawnBoss() {
@@ -876,14 +1101,16 @@ export class GameEngine {
       maxHp: hp,
       speed: Math.round(122 * curve.speedMult),
       damage: dmg,
-      exp: 60,
-      radius: 48,
+      exp: 1000,
+      radius: 76,
+      scale: 2.85,
       isBoss: true,
+      isSuperBoss: true,
       dashCd: 4.0,
       spriteKey: chap.bossSpriteKey || '20082'
     });
 
-    this.addDamageNumber(x, y, `【${chap.bossName} 降临！】`, '#ff3333', true);
+    this.addDamageNumber(x, y, `【灭世魔主 · ${chap.bossName} 降临！】`, '#ff0033', true);
   }
 
   private updateMonsterStatuses(dt: number) {
@@ -960,43 +1187,68 @@ export class GameEngine {
     this.player.kills++;
     sound.play('monster_die', 0.3);
 
+    const tier: 1 | 2 | 3 = m.exp < 6 ? 1 : (m.exp < 20 ? 2 : 3);
     this.drops.push({
       id: this.nextEntityId++,
       type: 'exp',
       x: m.x,
       y: m.y,
-      value: m.exp
+      value: m.exp,
+      tier
     });
 
-    if (m.isElite) {
+    if (m.isBoss) {
+      // Boss massive victory loot: 8 large gold coin piles + health restoration
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        this.drops.push({
+          id: this.nextEntityId++,
+          type: 'gold',
+          x: m.x + Math.cos(a) * 60,
+          y: m.y + Math.sin(a) * 60,
+          value: 100,
+          tier: 3
+        });
+      }
       this.drops.push({
         id: this.nextEntityId++,
         type: 'potion',
-        x: m.x - 16,
-        y: m.y + 8,
-        value: 40
+        x: m.x,
+        y: m.y,
+        value: 100
       });
+      this.bossDefeated = true;
+      this.phase = 'victory';
+    } else if (m.isElite) {
+      // Elite drops 3 gold coin piles + potion
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * Math.PI * 2;
+        this.drops.push({
+          id: this.nextEntityId++,
+          type: 'gold',
+          x: m.x + Math.cos(a) * 35,
+          y: m.y + Math.sin(a) * 35,
+          value: 35,
+          tier: 2
+        });
+      }
       this.drops.push({
         id: this.nextEntityId++,
-        type: 'gold',
-        x: m.x + 16,
-        y: m.y + 8,
-        value: 25
+        type: 'potion',
+        x: m.x,
+        y: m.y - 20,
+        value: 50
       });
-    } else if (Math.random() < 0.14) {
+    } else if (Math.random() < 0.16) {
       const isPotion = Math.random() < 0.35;
       this.drops.push({
         id: this.nextEntityId++,
         type: isPotion ? 'potion' : 'gold',
         x: m.x + (Math.random() - 0.5) * 20,
         y: m.y + (Math.random() - 0.5) * 20,
-        value: isPotion ? 28 : 10
+        value: isPotion ? 28 : 10,
+        tier: 1
       });
-    }
-
-    if (m.isBoss) {
-      this.bossDefeated = true;
-      this.phase = 'victory';
     }
   }
 
@@ -1084,9 +1336,10 @@ export class GameEngine {
           id: act.id,
           isNew: false,
           level: act.level + 1,
-          title: `${def.name} · Lv.${act.level + 1}`,
+          title: `【${getQualityBadge(def.quality)}】${def.name} · Lv.${act.level + 1}`,
           description: nextUpgrade ? `${nextUpgrade.title}: ${nextUpgrade.description}` : def.desc,
-          iconId: def.iconId
+          iconId: def.iconId,
+          quality: def.quality
         });
       }
     }
@@ -1099,9 +1352,10 @@ export class GameEngine {
           id: s.id,
           isNew: true,
           level: 1,
-          title: `习得新招: 【${s.name}】`,
+          title: `【${getQualityBadge(s.quality)}】习得: ${s.name}`,
           description: s.desc,
-          iconId: s.iconId
+          iconId: s.iconId,
+          quality: s.quality
         });
       }
     }
