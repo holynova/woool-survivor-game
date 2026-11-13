@@ -8,17 +8,17 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     classType: 'wizard',
     iconId: 2010,
     desc: '传奇世界法师终极奥义！引九天紫霄狂雷贯穿苍穹，产生剧烈雷暴轰炸与连锁电弧。',
-    cooldown: 1.15,
-    damage: 46,
+    cooldown: 1.65,
+    damage: 70,
     area: 100,
     range: 420,
     soundKey: 'skill_lightning',
     maxLevel: 4,
     upgrades: [
-      { level: 1, title: '初悟紫电', description: '招引单道狂暴紫雷轰击最近魔物，造成范围雷属性伤害。' },
-      { level: 2, title: '雷龙狂舞', description: '伤害提升35%，电弧将向周围额外2个目标跳跃。' },
-      { level: 3, title: '紫霄天罚', description: '伤害提升40%，降雷数量增至3道，必定麻痹魔物0.8秒。' },
-      { level: 4, title: '【狂龙破天·质变】', description: '天降狂暴紫雷阵！全屏引发持续电磁风暴，消灭敌人时引爆雷环！' }
+      { level: 1, title: '初悟紫电', description: '招引单道狂暴紫雷精准轰杀最近魔物，造成高额毁灭雷伤。' },
+      { level: 2, title: '雷龙狂舞', description: '伤害提升35%，狂雷炸裂附带小范围震荡波并向周围1个目标跳跃。' },
+      { level: 3, title: '紫霄天罚', description: '伤害提升40%，降雷增至2道且电弧跳跃2个目标，麻痹魔物0.8秒。' },
+      { level: 4, title: '【狂龙破天·质变】', description: '天降狂暴紫雷阵！全屏3道轰顶狂雷+3重跳跃电弧，消灭敌人引爆雷环！' }
     ]
   },
   meteor_fire_rain: {
@@ -27,17 +27,17 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     classType: 'wizard',
     iconId: 2011,
     desc: '从虚空中召唤密集的炽焰流星群轰击地面，产生持续火海灼烧。',
-    cooldown: 2.8,
-    damage: 32,
+    cooldown: 3.4,
+    damage: 68,
     area: 160,
     range: 360,
     soundKey: 'skill_firewall',
     maxLevel: 4,
     upgrades: [
-      { level: 1, title: '天降炽流', description: '召唤4颗流星轰击随机魔物密集区。' },
-      { level: 2, title: '流火连绵', description: '流星数量增至7颗，火海持续时间增加2秒。' },
-      { level: 3, title: '焚天烈焰', description: '伤害提升45%，火海附带敌人减速40%效果。' },
-      { level: 4, title: '【天外陨灭·质变】', description: '超巨大灭世流星坠地！轰飞全屏怪物并留下持续地心熔浆！' }
+      { level: 1, title: '天降炽流', description: '召唤单颗流星轰击最近魔物，留下地心烈焰。' },
+      { level: 2, title: '流火连绵', description: '流星数量增至2颗，火海持续时间增加2秒。' },
+      { level: 3, title: '焚天烈焰', description: '流星数量增至3颗，伤害提升45%，火海附带敌人减速40%与灼烧。' },
+      { level: 4, title: '【天外陨灭·质变】', description: '5颗超巨大灭世流星坠地！轰飞全屏怪物并留下持续地心熔浆！' }
     ]
   },
   hell_thunder: {
@@ -46,8 +46,8 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     classType: 'wizard',
     iconId: 2003,
     desc: '以施法者自身为核心爆发狂暴环形雷暴，瞬间重创贴身围困的所有魔物。',
-    cooldown: 2.2,
-    damage: 36,
+    cooldown: 2.8,
+    damage: 55,
     area: 180,
     range: 0,
     soundKey: 'skill_hellthunder',
@@ -86,8 +86,8 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     classType: 'warrior',
     iconId: 1004,
     desc: '传奇世界战士核心清怪绝学！挥刀狂旋360度释放半月弧光刀气，斩杀四面合围的敌群。',
-    cooldown: 1.5,
-    damage: 42,
+    cooldown: 1.65,
+    damage: 54,
     area: 130,
     range: 0,
     soundKey: 'skill_slash',
@@ -106,7 +106,7 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     iconId: 1010,
     desc: '传世战神霸道绝伦的冲锋位移！向前狂猛冲撞推土机般推挤并碾碎前方所有敌人。',
     cooldown: 3.5,
-    damage: 55,
+    damage: 60,
     area: 100,
     range: 220,
     soundKey: 'skill_repel',
@@ -143,8 +143,8 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     classType: 'warrior',
     iconId: 1006,
     desc: '引火元素于剑刃之上，挥出毁天灭地的纯阳火剑气，直取妖魔首级。',
-    cooldown: 2.6,
-    damage: 75,
+    cooldown: 3.2,
+    damage: 110,
     area: 90,
     range: 120,
     soundKey: 'skill_fireball',
@@ -163,9 +163,9 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     name: '强化骷髅术',
     classType: 'taoist',
     iconId: 3012,
-    desc: '传世道士最帅绝技！召唤2具手持双柄巨板斧的狂暴强化骷髅，自动全图疯狗般追斩魔物！',
+    desc: '传世道士最帅绝技！召唤手持双柄巨板斧的狂暴强化骷髅，自动全图疯狗般追斩魔物！',
     cooldown: 5.0,
-    damage: 38,
+    damage: 42,
     area: 70,
     range: 500,
     soundKey: 'skill_shinsu',
@@ -173,8 +173,8 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     upgrades: [
       { level: 1, title: '通灵白骨', description: '召唤1具强化白骨侍卫，手握双斧自主索敌砍杀。' },
       { level: 2, title: '双骨成阵', description: '同时召唤2具强化骷髅！侍卫移动速度提高30%。' },
-      { level: 3, title: '狂暴斧风', description: '强化骷髅攻击附带范围回旋斧风，攻速提升50%。' },
-      { level: 4, title: '【修罗双煞·质变】', description: '骷髅体型暴增为修罗巨灵！攻击附带吸血并为道士主人分担50%伤害！' }
+      { level: 3, title: '狂暴斧风', description: '强化骷髅攻击伤害提升50%，攻速提升50%。' },
+      { level: 4, title: '【修罗双煞·质变】', description: '骷髅增至3具修罗巨灵！攻击附带吸血并为道士主人分担50%伤害！' }
     ]
   },
   ghost_fire_curse: {
@@ -183,17 +183,17 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     classType: 'taoist',
     iconId: 3011,
     desc: '道家天机秘术，唤出幽蓝摄魄的冥火神符，回旋飞舞后锁敌轰杀。',
-    cooldown: 1.35,
-    damage: 42,
+    cooldown: 1.65,
+    damage: 56,
     area: 90,
     range: 400,
     soundKey: 'skill_talisman',
     maxLevel: 4,
     upgrades: [
-      { level: 1, title: '幽火化符', description: '投掷2道旋转幽冥火符，自动追踪最近敌人爆炸。' },
-      { level: 2, title: '冥符追魂', description: '火符数量增至4道，爆炸范围扩大25%。' },
-      { level: 3, title: '九幽摄魄', description: '伤害提升40%，受击魔物被幽冥寒气冻结1秒。' },
-      { level: 4, title: '【太极道煞·质变】', description: '8符连环齐发！幽火命中魔物后分裂为无数幽冥火苗二次爆裂！' }
+      { level: 1, title: '幽火化符', description: '投掷1道旋转幽冥火符，自动追踪最近敌人造成单体轰杀。' },
+      { level: 2, title: '冥符追魂', description: '火符数量增至2道，命中附带小范围幽火溅射。' },
+      { level: 3, title: '九幽摄魄', description: '火符数量增至3道，伤害提升40%，受击魔物被幽冥寒气减速。' },
+      { level: 4, title: '【太极道煞·质变】', description: '5符连环齐发！幽火命中魔物后分裂为无数幽冥火苗二次爆裂！' }
     ]
   },
   poison_cloud: {
@@ -202,8 +202,8 @@ export const WOOWL_SKILLS: Record<string, SkillDefinition> = {
     classType: 'taoist',
     iconId: 3004,
     desc: '提炼红绿双色秘制奇毒，绿毒噬肉腐血，红毒蚀骨破防。',
-    cooldown: 3.2,
-    damage: 18,
+    cooldown: 3.6,
+    damage: 24,
     area: 150,
     range: 300,
     soundKey: 'skill_poison',

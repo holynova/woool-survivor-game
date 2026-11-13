@@ -70,6 +70,7 @@ export interface ActiveSkillState {
   id: string;
   level: number;
   cdTimer: number;
+  maxCd?: number;
 }
 
 export interface ActivePassiveState {

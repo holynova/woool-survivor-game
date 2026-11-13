@@ -82,11 +82,11 @@ export const WOOWL_CHAPTERS: Record<string, ChapterDefinition> = {
     ambientTheme: 'wisp',
     description: '沉没于千年毒瘴沼泽中的古代祭坛废墟，幽蓝鬼火摇曳，毒蛇与亡灵骷髅大军自古桥四面合围！',
     monsterPool: [
-      { typeId: 'snake', weight: 25 },
-      { typeId: 'skeleton', weight: 30 },
-      { typeId: 'enhanced_skeleton', weight: 25 },
-      { typeId: 'blade_hound', weight: 10 },
-      { typeId: 'shinsu_puppet', weight: 10 }
+      { typeId: 'snake', weight: 35 },
+      { typeId: 'blade_hound', weight: 20 },
+      { typeId: 'skeleton', weight: 25 },
+      { typeId: 'enhanced_skeleton', weight: 15 },
+      { typeId: 'shinsu_puppet', weight: 5 }
     ]
   },
   frozen_citadel: {
@@ -104,10 +104,11 @@ export const WOOWL_CHAPTERS: Record<string, ChapterDefinition> = {
     ambientTheme: 'frost',
     description: '极北冰原的苍月古城要塞，积雪覆檐、玄冰烈焰交织，重甲精锐兽傀儡与妖化兽群疯狂冲击古刹祭坛！',
     monsterPool: [
-      { typeId: 'wild_boar', weight: 20 },
-      { typeId: 'blade_hound', weight: 20 },
-      { typeId: 'enhanced_skeleton', weight: 35 },
-      { typeId: 'shinsu_puppet', weight: 25 }
+      { typeId: 'snake', weight: 15 },
+      { typeId: 'blade_hound', weight: 25 },
+      { typeId: 'wild_boar', weight: 25 },
+      { typeId: 'enhanced_skeleton', weight: 25 },
+      { typeId: 'shinsu_puppet', weight: 10 }
     ]
   },
   iron_citadel: {
@@ -125,10 +126,11 @@ export const WOOWL_CHAPTERS: Record<string, ChapterDefinition> = {
     ambientTheme: 'lava',
     description: '终焉魔界深处的黑曜石铁血魔城，岩浆奔涌、铁链锁柱，唯有登峰造极的传世宗师方能在此迎战灭世魔君！',
     monsterPool: [
+      { typeId: 'blade_hound', weight: 30 },
+      { typeId: 'wild_boar', weight: 25 },
       { typeId: 'skeleton', weight: 25 },
-      { typeId: 'blade_hound', weight: 25 },
-      { typeId: 'enhanced_skeleton', weight: 30 },
-      { typeId: 'shinsu_puppet', weight: 20 }
+      { typeId: 'enhanced_skeleton', weight: 15 },
+      { typeId: 'shinsu_puppet', weight: 5 }
     ]
   }
 };

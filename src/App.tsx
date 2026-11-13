@@ -8,7 +8,7 @@ import { sound } from './audio';
 import { bootPhaser } from './renderer';
 import { assetUrl } from './utils';
 
-const APP_VERSION = 'v0.2.1';
+const APP_VERSION = 'v0.2.2';
 const GITHUB_REPO_URL = 'https://github.com/holynova/woool-survivor-game';
 
 function useGameState() {
@@ -333,10 +333,23 @@ export function App() {
                   {state.activeSkills.map((s, idx) => {
                     const def = WOOWL_SKILLS[s.id];
                     if (!def) return null;
+                    const maxCd = s.maxCd || def.cooldown || 2.0;
+                    const cdRatio = s.cdTimer > 0 ? Math.min(1, Math.max(0, s.cdTimer / maxCd)) : 0;
+                    const isReady = s.cdTimer <= 0;
                     return (
-                      <div key={s.id} className="woool-slot-box" title={`${def.name} Lv.${s.level}`}>
+                      <div
+                        key={s.id}
+                        className={`woool-slot-box ${isReady ? 'is-ready' : 'is-cooling'}`}
+                        title={`${def.name} Lv.${s.level} (基础冷却: ${def.cooldown}秒)`}
+                      >
                         <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
                         <img src={assetUrl(`assets/woool/skills/${def.iconId}.png`)} className="slot-icon" alt={def.name} />
+                        {s.cdTimer > 0 && (
+                          <>
+                            <div className="skill-cd-mask" style={{ height: `${Math.round(cdRatio * 100)}%` }} />
+                            <span className="skill-cd-timer">{s.cdTimer.toFixed(1)}s</span>
+                          </>
+                        )}
                         <span className="slot-badge">Lv.{s.level}</span>
                         <span className="slot-hotkey">{idx + 1}</span>
                       </div>

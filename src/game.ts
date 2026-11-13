@@ -175,16 +175,16 @@ export class GameEngine {
     if (heroClass === 'warrior') {
       this.player.maxHp = 240;
       this.player.hp = 240;
-      this.activeSkills.push({ id: 'moon_blade', level: 1, cdTimer: 0 });
+      this.activeSkills.push({ id: 'moon_blade', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.moon_blade.cooldown });
     } else if (heroClass === 'wizard') {
       this.player.maxHp = 155;
       this.player.hp = 155;
-      this.activeSkills.push({ id: 'dragon_purple_lightning', level: 1, cdTimer: 0 });
+      this.activeSkills.push({ id: 'dragon_purple_lightning', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.dragon_purple_lightning.cooldown });
     } else {
       this.player.maxHp = 190;
       this.player.hp = 190;
-      this.activeSkills.push({ id: 'enhanced_skeleton', level: 1, cdTimer: 0 });
-      this.activeSkills.push({ id: 'ghost_fire_curse', level: 1, cdTimer: 0.4 });
+      this.activeSkills.push({ id: 'enhanced_skeleton', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.enhanced_skeleton.cooldown });
+      this.activeSkills.push({ id: 'ghost_fire_curse', level: 1, cdTimer: 0.4, maxCd: WOOWL_SKILLS.ghost_fire_curse.cooldown });
       this.spawnMinion('skeleton', 1);
     }
 
@@ -200,9 +200,9 @@ export class GameEngine {
     this.player.invulnerableTime = 1.0;
     this.player.shieldUntil = 0;
 
-    // Seed immediate vanguard monsters outside comfortable spawn ring
-    for (let i = 0; i < 6; i++) {
-      this.spawnMonsterFromChapter(false, 370 + Math.random() * 140);
+    // Seed initial deliberate wanderers at distance to start the match smoothly
+    for (let i = 0; i < 3; i++) {
+      this.spawnMonsterFromChapter(false, 420 + Math.random() * 120);
     }
 
     this.emit();
@@ -268,9 +268,12 @@ export class GameEngine {
           let levelCdMod = 1.0 - (s.level - 1) * 0.06;
           if (s.id === 'moon_blade' && s.level >= 4) levelCdMod *= 0.72;
           if (s.id === 'hell_thunder' && s.level >= 2) levelCdMod *= 0.82;
-          s.cdTimer = Math.max(0.35, def.cooldown * baseCdMult * levelCdMod);
+          const cd = Math.max(0.35, def.cooldown * baseCdMult * levelCdMod);
+          s.cdTimer = cd;
+          s.maxCd = cd;
         } else {
           s.cdTimer = 0.18;
+          s.maxCd = s.maxCd || def.cooldown;
         }
       }
     }
@@ -283,6 +286,10 @@ export class GameEngine {
     const finalArea = def.area * areaMultiplier;
 
     if (id === 'dragon_purple_lightning') {
+      // Level 1: exactly 1 focused bolt, 0 chain arcs
+      // Level 2: 1 bolt + 1 chain arc + shockwave splash
+      // Level 3: 2 bolts + 2 chain arcs + stun
+      // Level 4: 3 bolts + 3 chain arcs + full screen storm
       const boltCount = level >= 4 ? 3 : level >= 3 ? 2 : 1;
       const targets = this.findNearestEnemies(this.player.x, this.player.y, def.range, boltCount);
       if (targets.length === 0) return false;
@@ -304,34 +311,37 @@ export class GameEngine {
           y: mainTarget.y
         });
 
-        // Localized electric shockwave around impact point
+        // Localized electric shockwave splash around the single strike point
+        const shockRadius = finalArea * (level >= 3 ? 0.85 : 0.70);
         const shockSplash = this.monsters.filter(
-          m => !hitIds.has(m.id) && m.hp > 0 && Math.hypot(m.x - mainTarget.x, m.y - mainTarget.y) <= finalArea * 0.85
+          m => !hitIds.has(m.id) && m.hp > 0 && Math.hypot(m.x - mainTarget.x, m.y - mainTarget.y) <= shockRadius
         );
         for (const sMob of shockSplash) {
           hitIds.add(sMob.id);
-          this.damageEnemy(sMob, Math.round(finalDamage * 0.65), false);
+          this.damageEnemy(sMob, Math.round(finalDamage * 0.58), false);
         }
 
-        // Chain lightning arcs to adjacent targets
-        const chainMax = level >= 4 ? 4 : level >= 2 ? 3 : 2;
-        const chains = this.monsters
-          .filter(m => !hitIds.has(m.id) && m.hp > 0 && Math.hypot(m.x - mainTarget.x, m.y - mainTarget.y) <= (level >= 4 ? 230 : 185))
-          .slice(0, chainMax);
+        // Chain lightning arcs: Level 1 = 0 chains! Level 2 = 1, Level 3 = 2, Level 4 = 3
+        const chainMax = level >= 4 ? 3 : level === 3 ? 2 : level === 2 ? 1 : 0;
+        if (chainMax > 0) {
+          const chains = this.monsters
+            .filter(m => !hitIds.has(m.id) && m.hp > 0 && Math.hypot(m.x - mainTarget.x, m.y - mainTarget.y) <= (level >= 4 ? 220 : 175))
+            .slice(0, chainMax);
 
-        for (const c of chains) {
-          hitIds.add(c.id);
-          const dmgRatio = level >= 4 ? 0.88 : 0.72;
-          this.damageEnemy(c, Math.round(finalDamage * dmgRatio), level >= 4);
-          if (level >= 3) {
-            c.stunUntil = Math.max(c.stunUntil || 0, this.clock + 0.5);
+          for (const c of chains) {
+            hitIds.add(c.id);
+            const dmgRatio = level >= 4 ? 0.85 : 0.65;
+            this.damageEnemy(c, Math.round(finalDamage * dmgRatio), level >= 4);
+            if (level >= 3) {
+              c.stunUntil = Math.max(c.stunUntil || 0, this.clock + 0.5);
+            }
+            this.effects.push({
+              id: this.nextEntityId++,
+              type: 'lightning',
+              x: c.x,
+              y: c.y
+            });
           }
-          this.effects.push({
-            id: this.nextEntityId++,
-            type: 'lightning',
-            x: c.x,
-            y: c.y
-          });
         }
       }
       return true;
@@ -381,7 +391,11 @@ export class GameEngine {
     }
 
     if (id === 'ghost_fire_curse') {
-      const talismanCount = level >= 4 ? 7 : level === 3 ? 5 : level === 2 ? 4 : 3;
+      // Level 1: exactly 1 talisman, no splash
+      // Level 2: 2 talismans + splash
+      // Level 3: 3 talismans + slow
+      // Level 4: 5 talismans
+      const talismanCount = level >= 4 ? 5 : level === 3 ? 3 : level === 2 ? 2 : 1;
       const targets = this.findNearestEnemies(this.player.x, this.player.y, def.range, talismanCount);
       if (targets.length === 0) return false;
 
@@ -392,10 +406,12 @@ export class GameEngine {
         if (level >= 3) {
           t.slowUntil = Math.max(t.slowUntil || 0, this.clock + 1.5);
         }
-        const splashRadius = level >= 2 ? 78 : 62;
-        for (const adj of this.monsters) {
-          if (adj.id !== t.id && adj.hp > 0 && Math.hypot(adj.x - t.x, adj.y - t.y) <= splashRadius) {
-            this.damageEnemy(adj, Math.round(finalDamage * 0.62), false);
+        if (level >= 2) {
+          const splashRadius = level >= 3 ? 75 : 60;
+          for (const adj of this.monsters) {
+            if (adj.id !== t.id && adj.hp > 0 && Math.hypot(adj.x - t.x, adj.y - t.y) <= splashRadius) {
+              this.damageEnemy(adj, Math.round(finalDamage * 0.5), false);
+            }
           }
         }
         this.effects.push({
@@ -411,7 +427,11 @@ export class GameEngine {
     }
 
     if (id === 'meteor_fire_rain') {
-      const meteorCount = level >= 4 ? 5 : level >= 2 ? 3 : 2;
+      // Level 1: exactly 1 meteor
+      // Level 2: 2 meteors
+      // Level 3: 3 meteors + slow & burn
+      // Level 4: 5 meteors
+      const meteorCount = level >= 4 ? 5 : level === 3 ? 3 : level === 2 ? 2 : 1;
       const candidates = this.findNearestEnemies(this.player.x, this.player.y, def.range, meteorCount);
       if (candidates.length === 0) return false;
 
@@ -769,10 +789,12 @@ export class GameEngine {
     const chap = WOOWL_CHAPTERS[this.chapterId] || WOOWL_CHAPTERS.sunset_island;
     const weightedPool = chap.monsterPool.map(item => {
       let w = item.weight;
-      if (progress < 0.22 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
-        w = Math.max(2, Math.round(w * 0.2));
-      } else if (progress >= 0.6 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
-        w = Math.round(w * 1.45);
+      if (progress < 0.20 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
+        w = 0;
+      } else if (progress < 0.45 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
+        w = Math.max(1, Math.round(w * 0.35));
+      } else if (progress >= 0.70 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
+        w = Math.round(w * 1.35);
       }
       return { typeId: item.typeId, weight: w };
     });
@@ -903,7 +925,7 @@ export class GameEngine {
 
     const rounded = Math.max(1, Math.round(finalDmg));
     this.player.hp -= rounded;
-    this.player.invulnerableTime = 0.32;
+    this.player.invulnerableTime = 0.48;
     sound.play('player_hurt', 0.4);
     this.addDamageNumber(this.player.x, this.player.y - 24, `-${rounded}`, '#ff4d4f', true);
 
@@ -1113,7 +1135,12 @@ export class GameEngine {
       if (existing) {
         existing.level = choice.level;
       } else {
-        this.activeSkills.push({ id: choice.id, level: choice.level, cdTimer: 0 });
+        this.activeSkills.push({
+          id: choice.id,
+          level: choice.level,
+          cdTimer: 0,
+          maxCd: WOOWL_SKILLS[choice.id]?.cooldown || 2.0
+        });
       }
     } else {
       const existing = this.activePassives.find(p => p.id === choice.id);
@@ -1135,7 +1162,7 @@ export class GameEngine {
     this.player.speed = this.heroClass === 'warrior' ? 225 : this.heroClass === 'wizard' ? 212 : 218;
     this.player.cooldownBonus = 0;
     this.player.areaBonus = 0;
-    this.player.pickupRange = 84;
+    this.player.pickupRange = 135;
     this.player.hpRegen = 0.5;
 
     const baseHp = (this.heroClass === 'warrior' ? 240 : this.heroClass === 'wizard' ? 155 : 190) + Math.round((chapDiff - 1) * 30);

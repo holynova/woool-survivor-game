@@ -8,80 +8,80 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   scarecrow: {
     id: 'scarecrow',
     name: '稻草人',
-    hp: 44,
-    speed: 108,
-    damage: 14,
-    exp: 2,
+    hp: 85,
+    speed: 78,
+    damage: 13,
+    exp: 3,
     radius: 24,
     spriteKey: '20112'
   },
   deer: {
     id: 'deer',
     name: '狂暴角鹿',
-    hp: 52,
-    speed: 144,
-    damage: 15,
-    exp: 2,
+    hp: 78,
+    speed: 104,
+    damage: 14,
+    exp: 4,
     radius: 24,
     spriteKey: '20072'
   },
   snake: {
     id: 'snake',
     name: '剧毒蟒蛇',
-    hp: 38,
-    speed: 158,
-    damage: 16,
-    exp: 2,
+    hp: 55,
+    speed: 112,
+    damage: 15,
+    exp: 3,
     radius: 20,
     spriteKey: '20038'
   },
   wild_boar: {
     id: 'wild_boar',
     name: '红野猪',
-    hp: 84,
-    speed: 132,
-    damage: 19,
-    exp: 3,
+    hp: 175,
+    speed: 88,
+    damage: 18,
+    exp: 6,
     radius: 26,
     spriteKey: '20046'
   },
   blade_hound: {
     id: 'blade_hound',
     name: '妖化刀犬',
-    hp: 70,
-    speed: 154,
-    damage: 20,
-    exp: 3,
+    hp: 135,
+    speed: 115,
+    damage: 19,
+    exp: 5,
     radius: 25,
     spriteKey: '20111'
   },
   skeleton: {
     id: 'skeleton',
     name: '白骨骷髅',
-    hp: 104,
-    speed: 118,
-    damage: 22,
-    exp: 4,
+    hp: 240,
+    speed: 82,
+    damage: 21,
+    exp: 8,
     radius: 27,
     spriteKey: '20081'
   },
   enhanced_skeleton: {
     id: 'enhanced_skeleton',
     name: '双斧骷髅将',
-    hp: 165,
-    speed: 128,
-    damage: 28,
-    exp: 6,
+    hp: 380,
+    speed: 95,
+    damage: 26,
+    exp: 15,
     radius: 30,
     spriteKey: '20082'
   },
   shinsu_puppet: {
     id: 'shinsu_puppet',
     name: '赤炎兽傀儡',
-    hp: 240,
-    speed: 114,
-    damage: 34,
-    exp: 8,
+    hp: 620,
+    speed: 85,
+    damage: 32,
+    exp: 22,
     radius: 34,
     spriteKey: '20085'
   }
@@ -268,9 +268,13 @@ export function evaluateCurveState(
   const effectiveChapterDmg = 1 + (chapterDifficulty - 1) * (0.18 + Math.min(1, p) * 0.42);
   const effectiveChapterSpd = 1 + (chapterDifficulty - 1) * 0.08;
 
-  const baseCount = 12 + p * 36;
-  const targetCount = Math.min(95, Math.max(8, Math.round(baseCount * waveDensityFactor * curve.densityMult)));
-  const spawnChancePerSec = Math.min(20, (2.4 + p * 11.0) * waveDensityFactor * curve.densityMult);
+  // Progressive non-linear pacing modeled after Vampire Survivors:
+  // Early game (p = 0..0.22): 4-8 deliberate enemies. Takes 2-3 hits to kill each, letting player warm up.
+  // Mid game (p = 0.22..0.6): 16-32 enemies, mini-hordes.
+  // Late game (p = 0.6..1.0): 45-75 enemies, full pressure hordes.
+  const baseCount = 5 + Math.pow(p, 1.35) * 50;
+  const targetCount = Math.min(85, Math.max(4, Math.round(baseCount * waveDensityFactor * curve.densityMult)));
+  const spawnChancePerSec = Math.min(14, (0.75 + Math.pow(p, 1.25) * 8.8) * waveDensityFactor * curve.densityMult);
 
   return {
     phaseIndex,
