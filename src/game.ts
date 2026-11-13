@@ -20,8 +20,8 @@ import {
 } from './config/curves';
 import { sound } from './audio';
 
-export const WORLD_WIDTH = 2752;
-export const WORLD_HEIGHT = 1536;
+export const WORLD_WIDTH = 3840;
+export const WORLD_HEIGHT = 2160;
 
 export function calcDirection(dx: number, dy: number): number {
   const angle = Math.atan2(dy, dx);

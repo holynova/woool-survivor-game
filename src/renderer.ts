@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { game, calcDirection } from './game';
+import { game, calcDirection, WORLD_WIDTH, WORLD_HEIGHT } from './game';
 import type { EffectEvent, MonsterEntity, MinionEntity, DropEntity, DamageNumber } from './types';
 import { assetUrl } from './utils';
 
@@ -118,12 +118,13 @@ export class BattleScene extends Phaser.Scene {
     // Map Background (Full-Scene High-Resolution 2.5D Isometric City)
     this.currentChapterId = game.chapterId;
     const mapKey = CHAPTER_MAP_IMAGE[this.currentChapterId] || 'map_sunset_island';
-    this.bgImage = this.add.image(1376, 768, mapKey);
+    this.bgImage = this.add.image(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, mapKey);
+    this.bgImage.setDisplaySize(WORLD_WIDTH, WORLD_HEIGHT);
     this.bgImage.setOrigin(0.5, 0.5);
     this.bgImage.setDepth(-100);
 
     // World Boundaries
-    this.cameras.main.setBounds(0, 0, 2752, 1536);
+    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     // Graphics Layers
     this.playerShadow = this.add.graphics().setDepth(5);
