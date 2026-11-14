@@ -425,6 +425,12 @@ html, body, #root {
   text-align: center;
 }
 
+.goal-hint {
+  font-size: 13px;
+  color: #ffd700;
+  text-align: center;
+}
+
 .lobby-footer-meta {
   display: flex;
   align-items: center;

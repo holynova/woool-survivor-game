@@ -107,8 +107,8 @@ export const WOOWL_DIFFICULTY_CURVES: Record<DifficultyCurveId, DifficultyCurveD
   standard: {
     id: 'standard',
     name: '中州正统',
-    badge: '推荐曲线',
-    summary: '张弛有度的波浪锯齿曲线：发育起势 → 兽潮爆发 → 喘息收割 → 百鬼狂潮 → 决战魔主。',
+    badge: '推荐',
+    summary: '张弛有度的波浪锯齿曲线：发育起势 → 第一波兽潮 → 整备收割 → 百鬼狂潮 → 决战魔主。',
     hpMult: 1.0,
     dmgMult: 1.0,
     speedMult: 1.0,

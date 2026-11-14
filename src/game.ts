@@ -1336,8 +1336,8 @@ export class GameEngine {
           id: act.id,
           isNew: false,
           level: act.level + 1,
-          title: `【${getQualityBadge(def.quality)}】${def.name} · Lv.${act.level + 1}`,
-          description: nextUpgrade ? `${nextUpgrade.title}: ${nextUpgrade.description}` : def.desc,
+          title: `【${getQualityBadge(def.quality)}】${def.name} Lv.${act.level + 1}`,
+          description: nextUpgrade ? `${nextUpgrade.title}：${nextUpgrade.description}` : def.desc,
           iconId: def.iconId,
           quality: def.quality
         });
@@ -1352,7 +1352,7 @@ export class GameEngine {
           id: s.id,
           isNew: true,
           level: 1,
-          title: `【${getQualityBadge(s.quality)}】习得: ${s.name}`,
+          title: `【${getQualityBadge(s.quality)}】习得：${s.name}`,
           description: s.desc,
           iconId: s.iconId,
           quality: s.quality
