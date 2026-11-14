@@ -95,7 +95,13 @@ const DECOR_MAP_LAYOUT: Array<{ x: number; y: number; texture: string }> = [
   { x: 2150, y: 780, texture: 'tree_peach' },
   { x: 2650, y: 780, texture: 'tree_peach' },
   { x: 2150, y: 2420, texture: 'tree_pine' },
-  { x: 2650, y: 2420, texture: 'tree_pine' }
+  { x: 2650, y: 2420, texture: 'tree_pine' },
+
+  // Authentic 2.5D landmarks (Ancient Pavilions & Wells)
+  { x: 2020, y: 1360, texture: 'ancient_pavilion' },
+  { x: 2780, y: 1840, texture: 'ancient_pavilion' },
+  { x: 2200, y: 1760, texture: 'ancient_well' },
+  { x: 2600, y: 1440, texture: 'ancient_well' }
 ];
 
 export class BattleScene extends Phaser.Scene {
@@ -152,13 +158,15 @@ export class BattleScene extends Phaser.Scene {
     this.load.image('floor_desert', assetUrl('assets/woool/maps/floor_desert.png'));
     this.load.image('floor_stone', assetUrl('assets/woool/maps/floor_stone.png'));
 
-    // 2. Modular 2.5D Decor Sprites (Trees, Rocks, Fences, Lanterns)
+    // 2. Modular 2.5D Decor Sprites (Trees, Rocks, Fences, Lanterns, Wells, Pavilions)
     this.load.image('tree_peach', assetUrl('assets/woool/maps/tree_peach.png'));
     this.load.image('tree_willow', assetUrl('assets/woool/maps/tree_willow.png'));
     this.load.image('tree_pine', assetUrl('assets/woool/maps/tree_pine.png'));
     this.load.image('rock_boulder', assetUrl('assets/woool/maps/rock_boulder.png'));
     this.load.image('wood_fence', assetUrl('assets/woool/maps/wood_fence.png'));
     this.load.image('stone_lantern', assetUrl('assets/woool/maps/stone_lantern.png'));
+    this.load.image('ancient_well', assetUrl('assets/woool/maps/ancient_well.png'));
+    this.load.image('ancient_pavilion', assetUrl('assets/woool/maps/ancient_pavilion.png'));
 
     // 3. Authentic Woool Ground Gold Coins
     this.load.image('coin_1', assetUrl('assets/woool/items/gold_coin_1.png'));
@@ -183,19 +191,28 @@ export class BattleScene extends Phaser.Scene {
     // 6. Skill Effects
     this.load.atlas('level_up', assetUrl('assets/woool/effects/level_up@0.png'), assetUrl('assets/woool/effects/level_up@0.json'));
     this.load.atlas('fx_2010', assetUrl('assets/woool/skills_fx/s_2010@0.png'), assetUrl('assets/woool/skills_fx/s_2010@0.json'));
+    this.load.atlas('fx_1002', assetUrl('assets/woool/skills_fx/s_1002@0.png'), assetUrl('assets/woool/skills_fx/s_1002@0.json'));
+    this.load.atlas('fx_1003', assetUrl('assets/woool/skills_fx/s_1003@0.png'), assetUrl('assets/woool/skills_fx/s_1003@0.json'));
     this.load.atlas('fx_1004', assetUrl('assets/woool/skills_fx/s_1004@0.png'), assetUrl('assets/woool/skills_fx/s_1004@0.json'));
-    this.load.atlas('fx_2011', assetUrl('assets/woool/skills_fx/s_2011@0.png'), assetUrl('assets/woool/skills_fx/s_2011@0.json'));
-    this.load.atlas('fx_2003', assetUrl('assets/woool/skills_fx/s_2003@0.png'), assetUrl('assets/woool/skills_fx/s_2003@0.json'));
     this.load.atlas('fx_1006', assetUrl('assets/woool/skills_fx/s_1006@0.png'), assetUrl('assets/woool/skills_fx/s_1006@0.json'));
-    this.load.atlas('fx_3011', assetUrl('assets/woool/skills_fx/s_3011@0.png'), assetUrl('assets/woool/skills_fx/s_3011@0.json'));
-    this.load.atlas('fx_3004', assetUrl('assets/woool/skills_fx/s_3004@0.png'), assetUrl('assets/woool/skills_fx/s_3004@0.json'));
     this.load.atlas('fx_1008', assetUrl('assets/woool/skills_fx/s_1008@0.png'), assetUrl('assets/woool/skills_fx/s_1008@0.json'));
-    this.load.atlas('fx_2009', assetUrl('assets/woool/skills_fx/s_2009@0.png'), assetUrl('assets/woool/skills_fx/s_2009@0.json'));
-    this.load.atlas('fx_3007', assetUrl('assets/woool/skills_fx/s_3007@0.png'), assetUrl('assets/woool/skills_fx/s_3007@0.json'));
-    this.load.atlas('fx_3012', assetUrl('assets/woool/skills_fx/s_3012@0.png'), assetUrl('assets/woool/skills_fx/s_3012@0.json'));
     this.load.atlas('fx_1010', assetUrl('assets/woool/skills_fx/s_1010@0.png'), assetUrl('assets/woool/skills_fx/s_1010@0.json'));
-    this.load.atlas('fx_2202', assetUrl('assets/woool/skills_fx/s_2202@0.png'), assetUrl('assets/woool/skills_fx/s_2202@0.json'));
+    this.load.atlas('fx_1102', assetUrl('assets/woool/skills_fx/s_1102@0.png'), assetUrl('assets/woool/skills_fx/s_1102@0.json'));
     this.load.atlas('fx_2001', assetUrl('assets/woool/skills_fx/s_2001@0.png'), assetUrl('assets/woool/skills_fx/s_2001@0.json'));
+    this.load.atlas('fx_2003', assetUrl('assets/woool/skills_fx/s_2003@0.png'), assetUrl('assets/woool/skills_fx/s_2003@0.json'));
+    this.load.atlas('fx_2004', assetUrl('assets/woool/skills_fx/s_2004@0.png'), assetUrl('assets/woool/skills_fx/s_2004@0.json'));
+    this.load.atlas('fx_2005', assetUrl('assets/woool/skills_fx/s_2005@0.png'), assetUrl('assets/woool/skills_fx/s_2005@0.json'));
+    this.load.atlas('fx_2008', assetUrl('assets/woool/skills_fx/s_2008@0.png'), assetUrl('assets/woool/skills_fx/s_2008@0.json'));
+    this.load.atlas('fx_2009', assetUrl('assets/woool/skills_fx/s_2009@0.png'), assetUrl('assets/woool/skills_fx/s_2009@0.json'));
+    this.load.atlas('fx_2011', assetUrl('assets/woool/skills_fx/s_2011@0.png'), assetUrl('assets/woool/skills_fx/s_2011@0.json'));
+    this.load.atlas('fx_2202', assetUrl('assets/woool/skills_fx/s_2202@0.png'), assetUrl('assets/woool/skills_fx/s_2202@0.json'));
+    this.load.atlas('fx_3001', assetUrl('assets/woool/skills_fx/s_3001@0.png'), assetUrl('assets/woool/skills_fx/s_3001@0.json'));
+    this.load.atlas('fx_3003', assetUrl('assets/woool/skills_fx/s_3003@0.png'), assetUrl('assets/woool/skills_fx/s_3003@0.json'));
+    this.load.atlas('fx_3004', assetUrl('assets/woool/skills_fx/s_3004@0.png'), assetUrl('assets/woool/skills_fx/s_3004@0.json'));
+    this.load.atlas('fx_3007', assetUrl('assets/woool/skills_fx/s_3007@0.png'), assetUrl('assets/woool/skills_fx/s_3007@0.json'));
+    this.load.atlas('fx_3008', assetUrl('assets/woool/skills_fx/s_3008@0.png'), assetUrl('assets/woool/skills_fx/s_3008@0.json'));
+    this.load.atlas('fx_3011', assetUrl('assets/woool/skills_fx/s_3011@0.png'), assetUrl('assets/woool/skills_fx/s_3011@0.json'));
+    this.load.atlas('fx_3012', assetUrl('assets/woool/skills_fx/s_3012@0.png'), assetUrl('assets/woool/skills_fx/s_3012@0.json'));
   }
 
   create() {
@@ -730,7 +747,10 @@ export class BattleScene extends Phaser.Scene {
     const directionalFx: Record<string, { tex: string; baseAnim: string; dy?: number; dDepth?: number; scale: number; followPlayer?: boolean }> = {
       blade_arc: { tex: 'fx_1004', baseAnim: 'fx_blade_arc_anim', dy: 4, dDepth: 18, scale: 1.22, followPlayer: true },
       fire_slash: { tex: 'fx_1006', baseAnim: 'fx_fire_slash_anim', dy: 2, dDepth: 30, scale: 1.2 },
-      skeleton_hit: { tex: 'fx_1004', baseAnim: 'fx_blade_arc_anim', dy: 6, dDepth: 16, scale: 0.72 }
+      skeleton_hit: { tex: 'fx_1004', baseAnim: 'fx_blade_arc_anim', dy: 6, dDepth: 16, scale: 0.72 },
+      attack_slash: { tex: 'fx_1002', baseAnim: 'fx_attack_slash_anim', dy: 2, dDepth: 20, scale: 1.15, followPlayer: true },
+      assassination_sword: { tex: 'fx_1003', baseAnim: 'fx_assassination_sword_anim', dy: 2, dDepth: 25, scale: 1.25 },
+      thunder_sword: { tex: 'fx_1102', baseAnim: 'fx_thunder_sword_anim', dy: -4, dDepth: 35, scale: 1.4 }
     };
 
     const fxTable: Record<string, { tex: string; anim: string; dy?: number; dDepth?: number; scale?: number; followPlayer?: boolean }> = {
@@ -742,7 +762,14 @@ export class BattleScene extends Phaser.Scene {
       wind_shield: { tex: 'fx_2009', anim: 'fx_wind_shield_cast_anim', dy: -6, dDepth: 12, scale: 1.25, followPlayer: true },
       shinsu: { tex: 'fx_3007', anim: 'fx_shinsu_anim', dy: 6, dDepth: 20, scale: 1.15 },
       shinsu_hit: { tex: 'fx_2001', anim: 'fx_shinsu_hit_anim', dy: -10, dDepth: 25, scale: 0.78 },
-      skeleton: { tex: 'fx_3012', anim: 'fx_skeleton_anim', dy: 10, dDepth: 20, scale: 0.88 }
+      skeleton: { tex: 'fx_3012', anim: 'fx_skeleton_anim', dy: 10, dDepth: 20, scale: 0.88 },
+      ice_roar: { tex: 'fx_2008', anim: 'fx_ice_roar_anim', dy: 0, dDepth: 30, scale: 1.35 },
+      fireball: { tex: 'fx_2001', anim: 'fx_fireball_anim', dy: -8, dDepth: 25, scale: 0.95 },
+      lightning_strike: { tex: 'fx_2005', anim: 'fx_lightning_strike_anim', dy: 6, dDepth: 30, scale: 1.1 },
+      hellfire: { tex: 'fx_2004', anim: 'fx_hellfire_anim', dy: 0, dDepth: 25, scale: 1.35 },
+      heal_spell: { tex: 'fx_3001', anim: 'fx_heal_spell_anim', dy: -12, dDepth: 35, scale: 1.1, followPlayer: true },
+      summon_skeleton: { tex: 'fx_3003', anim: 'fx_summon_skeleton_anim', dy: 4, dDepth: 20, scale: 1.05 },
+      ghost_fire_curse: { tex: 'fx_3008', anim: 'fx_ghost_fire_curse_anim', dy: -6, dDepth: 25, scale: 1.1 }
     };
 
     const newEffects = game.takeEffects();
@@ -987,17 +1014,27 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
-    // 3. Directional Blade Arc, Fire Slash, Dash
+    // 3. Directional Slashes & Dash
     for (let d = 0; d <= 4; d++) {
       this.createAnimFromAtlas(`fx_blade_arc_anim_d${d}`, 'fx_1004', `1004/attack/${d}`, 15, 0);
       this.createAnimFromAtlas(`fx_fire_slash_anim_d${d}`, 'fx_1006', `1006/attack/${d}`, 15, 0);
       this.createAnimFromAtlas(`fx_dash_anim_d${d}`, 'fx_1010', `1010/attack/${d}`, 16, 0);
+      this.createAnimFromAtlas(`fx_attack_slash_anim_d${d}`, 'fx_1002', `1002/attack/${d}`, 16, 0);
+      this.createAnimFromAtlas(`fx_assassination_sword_anim_d${d}`, 'fx_1003', `1003/attack/${d}`, 16, 0);
+      this.createAnimFromAtlas(`fx_thunder_sword_anim_d${d}`, 'fx_1102', `1102/attack/${d}`, 16, 0);
     }
 
     // 4. Authentic Skill Effects
     this.createAnimFromAtlas('fx_level_up_anim', 'level_up', 'level_up/', 15, 0);
     this.createAnimFromAtlas('fx_lightning_anim', 'fx_2010', '2010/hit/', 16, 0);
     this.createAnimFromAtlas('fx_lightning_cast_anim', 'fx_2010', '2010/casting/', 15, 0);
+    this.createAnimFromAtlas('fx_ice_roar_anim', 'fx_2008', '2008/hit/', 16, 0);
+    this.createAnimFromAtlas('fx_fireball_anim', 'fx_2001', '2001/hit/', 15, 0);
+    this.createAnimFromAtlas('fx_lightning_strike_anim', 'fx_2005', '2005/hit/', 16, 0);
+    this.createAnimFromAtlas('fx_hellfire_anim', 'fx_2004', '2004/loop/', 15, 0);
+    this.createAnimFromAtlas('fx_heal_spell_anim', 'fx_3001', '3001/hit/', 14, 0);
+    this.createAnimFromAtlas('fx_summon_skeleton_anim', 'fx_3003', '3003/hit/', 14, 0);
+    this.createAnimFromAtlas('fx_ghost_fire_curse_anim', 'fx_3008', '3008/hit/', 15, 0);
     this.createAnimFromAtlas('fx_hell_thunder_anim', 'fx_2003', '2003/hit/', 16, 0);
     this.createAnimFromAtlas('fx_poison_anim', 'fx_3004', '3004/hit/', 12, 0);
     this.createAnimFromAtlas('fx_poison_cast_anim', 'fx_3004', '3004/casting/', 14, 0);

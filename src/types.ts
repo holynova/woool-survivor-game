@@ -164,7 +164,17 @@ export interface EffectEvent {
     | 'shinsu'
     | 'shinsu_hit'
     | 'skeleton'
-    | 'skeleton_hit';
+    | 'skeleton_hit'
+    | 'ice_roar'
+    | 'fireball'
+    | 'lightning_strike'
+    | 'hellfire'
+    | 'attack_slash'
+    | 'assassination_sword'
+    | 'thunder_sword'
+    | 'heal_spell'
+    | 'summon_skeleton'
+    | 'ghost_fire_curse';
   x: number;
   y: number;
   targetX?: number;

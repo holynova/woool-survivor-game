@@ -202,16 +202,15 @@ export class GameEngine {
     if (heroClass === 'warrior') {
       this.player.maxHp = 240;
       this.player.hp = 240;
-      this.activeSkills.push({ id: 'moon_blade', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.moon_blade.cooldown });
+      this.activeSkills.push({ id: 'attack_slash', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.attack_slash.cooldown });
     } else if (heroClass === 'wizard') {
       this.player.maxHp = 155;
       this.player.hp = 155;
-      this.activeSkills.push({ id: 'dragon_purple_lightning', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.dragon_purple_lightning.cooldown });
+      this.activeSkills.push({ id: 'fireball', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.fireball.cooldown });
     } else {
       this.player.maxHp = 190;
       this.player.hp = 190;
-      this.activeSkills.push({ id: 'enhanced_skeleton', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.enhanced_skeleton.cooldown });
-      this.activeSkills.push({ id: 'ghost_fire_curse', level: 1, cdTimer: 0.4, maxCd: WOOWL_SKILLS.ghost_fire_curse.cooldown });
+      this.activeSkills.push({ id: 'soul_talisman', level: 1, cdTimer: 0, maxCd: WOOWL_SKILLS.soul_talisman.cooldown });
       this.spawnMinion('skeleton', 1);
     }
 
@@ -675,7 +674,7 @@ export class GameEngine {
       const iceRadius = finalArea * (level >= 3 ? 1.3 : 1.0);
       this.effects.push({
         id: this.nextEntityId++,
-        type: 'poison',
+        type: 'ice_roar',
         x: target.x,
         y: target.y,
         radius: iceRadius,
@@ -686,6 +685,260 @@ export class GameEngine {
         m.slowUntil = Math.max(m.slowUntil || 0, this.clock + (level >= 4 ? 3.5 : 2.2));
         if (level >= 4) m.stunUntil = Math.max(m.stunUntil || 0, this.clock + 1.2);
         this.damageEnemy(m, finalDamage, level >= 3);
+      }
+      return true;
+    }
+
+    if (id === 'fireball') {
+      const fireballCount = level >= 4 ? 3 : (level >= 3 ? 2 : 1);
+      const targets = this.findNearestEnemies(this.player.x, this.player.y, def.range, fireballCount);
+      if (targets.length === 0) return false;
+
+      sound.play(def.soundKey);
+      for (const target of targets) {
+        this.effects.push({
+          id: this.nextEntityId++,
+          type: 'fireball',
+          x: target.x,
+          y: target.y,
+          level
+        });
+        const isCrit = level >= 4 || Math.random() < 0.25;
+        this.damageEnemy(target, isCrit ? Math.round(finalDamage * 1.5) : finalDamage, isCrit);
+        if (level >= 3) {
+          target.burnUntil = Math.max(target.burnUntil || 0, this.clock + 2.0);
+        }
+        if (level >= 4) {
+          const splashR = 75;
+          for (const m of this.monsters) {
+            if (m.id !== target.id && m.hp > 0 && Math.hypot(m.x - target.x, m.y - target.y) <= splashR) {
+              this.damageEnemy(m, Math.round(finalDamage * 0.45), false);
+            }
+          }
+        }
+      }
+      return true;
+    }
+
+    if (id === 'lightning_strike') {
+      const strikeCount = level >= 4 ? 3 : (level >= 3 ? 2 : 1);
+      const targets = this.findNearestEnemies(this.player.x, this.player.y, def.range, strikeCount);
+      if (targets.length === 0) return false;
+
+      sound.play(def.soundKey);
+      for (const target of targets) {
+        this.effects.push({
+          id: this.nextEntityId++,
+          type: 'lightning_strike',
+          x: target.x,
+          y: target.y,
+          level
+        });
+        this.damageEnemy(target, finalDamage, level >= 3);
+        const stunDuration = level >= 3 ? 0.8 : 0.4;
+        target.stunUntil = Math.max(target.stunUntil || 0, this.clock + stunDuration);
+      }
+      return true;
+    }
+
+    if (id === 'hellfire') {
+      const target = this.findNearestEnemy(this.player.x, this.player.y, def.range + (level >= 2 ? 80 : 0));
+      if (!target) return false;
+
+      sound.play(def.soundKey);
+      const hdx = target.x - this.player.x;
+      const hdy = target.y - this.player.y;
+      const hDist = Math.hypot(hdx, hdy) || 1;
+      const ndx = hdx / hDist;
+      const ndy = hdy / hDist;
+      const fireLen = def.range + (level >= 2 ? 80 : 0);
+      const fireWidth = 65;
+      const fireDir = calcDirection(hdx, hdy);
+
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'hellfire',
+        x: this.player.x + ndx * (fireLen * 0.4),
+        y: this.player.y + ndy * (fireLen * 0.4),
+        dir: fireDir,
+        level
+      });
+
+      for (const m of this.monsters) {
+        if (m.hp <= 0) continue;
+        const vmx = m.x - this.player.x;
+        const vmy = m.y - this.player.y;
+        const proj = vmx * ndx + vmy * ndy;
+        if (proj >= 0 && proj <= fireLen) {
+          const perp = Math.abs(-ndy * vmx + ndx * vmy);
+          if (perp <= fireWidth) {
+            this.damageEnemy(m, finalDamage, level >= 4);
+            if (level >= 3) {
+              m.burnUntil = Math.max(m.burnUntil || 0, this.clock + 3.0);
+            }
+          }
+        }
+      }
+      return true;
+    }
+
+    if (id === 'attack_slash') {
+      const target = this.findNearestEnemy(this.player.x, this.player.y, def.range + 30);
+      if (!target) return false;
+
+      sound.play(def.soundKey);
+      const slashDir = calcDirection(target.x - this.player.x, target.y - this.player.y);
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'attack_slash',
+        x: this.player.x + (target.x - this.player.x) * 0.4,
+        y: this.player.y + (target.y - this.player.y) * 0.4,
+        dir: slashDir,
+        level
+      });
+
+      const pushDist = level >= 2 ? 65 : 45;
+      const hitRadius = level >= 3 ? 120 : 85;
+      for (const m of this.monsters) {
+        if (Math.hypot(m.x - this.player.x, m.y - this.player.y) <= hitRadius) {
+          const mAngle = Math.atan2(m.y - this.player.y, m.x - this.player.x);
+          const diff = Math.abs(mAngle - Math.atan2(target.y - this.player.y, target.x - this.player.x));
+          if (diff <= 1.2 || diff >= Math.PI * 2 - 1.2) {
+            const isCrit = level >= 4 && Math.random() < 0.35;
+            this.damageEnemy(m, isCrit ? Math.round(finalDamage * 1.6) : finalDamage, isCrit);
+            const push = m.isBoss ? pushDist * 0.2 : pushDist;
+            m.x = Math.max(80, Math.min(WORLD_WIDTH - 80, m.x + Math.cos(mAngle) * push));
+            m.y = Math.max(80, Math.min(WORLD_HEIGHT - 80, m.y + Math.sin(mAngle) * push));
+          }
+        }
+      }
+      return true;
+    }
+
+    if (id === 'assassination_sword') {
+      const target = this.findNearestEnemy(this.player.x, this.player.y, def.range + 40);
+      if (!target) return false;
+
+      sound.play(def.soundKey);
+      const adx = target.x - this.player.x;
+      const ady = target.y - this.player.y;
+      const aDist = Math.hypot(adx, ady) || 1;
+      const andx = adx / aDist;
+      const andy = ady / aDist;
+      const swordDir = calcDirection(adx, ady);
+
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'assassination_sword',
+        x: this.player.x + andx * (def.range * 0.5),
+        y: this.player.y + andy * (def.range * 0.5),
+        dir: swordDir,
+        level
+      });
+
+      const pierceLen = def.range * (level >= 3 ? 1.3 : 1.0);
+      for (const m of this.monsters) {
+        if (m.hp <= 0) continue;
+        const vmx = m.x - this.player.x;
+        const vmy = m.y - this.player.y;
+        const proj = vmx * andx + vmy * andy;
+        if (proj >= 0 && proj <= pierceLen) {
+          const perp = Math.abs(-andy * vmx + andx * vmy);
+          if (perp <= 45) {
+            this.damageEnemy(m, finalDamage, level >= 4);
+          }
+        }
+      }
+      return true;
+    }
+
+    if (id === 'soul_talisman') {
+      const talismanCount = level >= 4 ? 4 : (level >= 3 ? 2 : 1);
+      const targets = this.findNearestEnemies(this.player.x, this.player.y, def.range, talismanCount);
+      if (targets.length === 0) return false;
+
+      sound.play(def.soundKey);
+      for (const t of targets) {
+        this.effects.push({
+          id: this.nextEntityId++,
+          type: 'talisman',
+          x: this.player.x,
+          y: this.player.y,
+          targetX: t.x,
+          targetY: t.y,
+          level
+        });
+        this.damageEnemy(t, finalDamage, level >= 4);
+        if (level >= 4) {
+          t.stunUntil = Math.max(t.stunUntil || 0, this.clock + 1.0);
+        }
+      }
+      return true;
+    }
+
+    if (id === 'heal_spell') {
+      sound.play(def.soundKey);
+      const healAmount = level >= 3 ? 80 : (level >= 2 ? 55 : 35);
+      this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmount);
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'heal_spell',
+        x: this.player.x,
+        y: this.player.y,
+        level
+      });
+      if (level >= 3) {
+        for (const minion of this.minions) {
+          minion.hp = minion.maxHp;
+        }
+      }
+      return true;
+    }
+
+    if (id === 'summon_skeleton') {
+      const desiredCount = level >= 3 ? 2 : 1;
+      const currentSkeletons = this.minions.filter(m => m.type === 'skeleton');
+      if (currentSkeletons.length < desiredCount) {
+        this.spawnMinion('skeleton', level);
+        sound.play(def.soundKey);
+        this.effects.push({
+          id: this.nextEntityId++,
+          type: 'summon_skeleton',
+          x: this.player.x + 30,
+          y: this.player.y,
+          level
+        });
+      }
+      for (const m of currentSkeletons) {
+        m.damage = Math.round(36 * (1 + (level - 1) * 0.35));
+        m.speed = level >= 2 ? 280 : 240;
+      }
+      return true;
+    }
+
+    if (id === 'thunder_sword') {
+      const target = this.findNearestEnemy(this.player.x, this.player.y, def.range + 60);
+      if (!target) return false;
+      sound.play(def.soundKey);
+      const tdx = target.x - this.player.x;
+      const tdy = target.y - this.player.y;
+      const swordDir = calcDirection(tdx, tdy);
+
+      this.effects.push({
+        id: this.nextEntityId++,
+        type: 'thunder_sword',
+        x: target.x,
+        y: target.y,
+        dir: swordDir,
+        level
+      });
+
+      const thunderRadius = def.area * (level >= 2 ? 1.4 : 1.0);
+      for (const m of this.monsters) {
+        if (Math.hypot(m.x - target.x, m.y - target.y) <= thunderRadius) {
+          this.damageEnemy(m, finalDamage, true);
+          m.stunUntil = Math.max(m.stunUntil || 0, this.clock + 1.2);
+        }
       }
       return true;
     }
@@ -711,23 +964,6 @@ export class GameEngine {
       return true;
     }
 
-    if (id === 'thunder_sword') {
-      const targets = this.findNearestEnemies(this.player.x, this.player.y, def.range, 3);
-      if (targets.length === 0) return false;
-      sound.play(def.soundKey);
-      for (const t of targets) {
-        this.effects.push({
-          id: this.nextEntityId++,
-          type: 'lightning',
-          x: t.x,
-          y: t.y,
-          level
-        });
-        this.damageEnemy(t, finalDamage, true);
-        if (level >= 2) t.stunUntil = Math.max(t.stunUntil || 0, this.clock + 0.8);
-      }
-      return true;
-    }
 
     if (id === 'lion_roar') {
       sound.play(def.soundKey);
@@ -1324,61 +1560,119 @@ export class GameEngine {
   }
 
   private generateUpgradeChoices() {
-    const choices: typeof this.upgradeChoices = [];
-    const availableSkills = Object.values(WOOWL_SKILLS).filter(s => s.classType === this.heroClass || s.classType === 'all');
+    const choices: Array<{
+      item: GameEngine['upgradeChoices'][0];
+      weight: number;
+    }> = [];
+    const playerLvl = this.player.level;
 
+    const getQualityWeight = (quality: SkillQuality = 'common', lvl: number): number => {
+      switch (quality) {
+        case 'common': return lvl <= 4 ? 90 : (lvl <= 8 ? 40 : 15);
+        case 'rare': return lvl <= 3 ? 55 : (lvl <= 8 ? 85 : 45);
+        case 'epic': return lvl < 4 ? 10 : (lvl <= 8 ? 75 : 70);
+        case 'mythic': return lvl < 6 ? 0 : (lvl <= 10 ? 45 : 75);
+        case 'legendary': return lvl < 9 ? 0 : (lvl <= 12 ? 35 : 70);
+        default: return 50;
+      }
+    };
+
+    // Active skills upgrade
     for (const act of this.activeSkills) {
       const def = WOOWL_SKILLS[act.id];
       if (def && act.level < def.maxLevel) {
         const nextUpgrade = def.upgrades.find(u => u.level === act.level + 1);
+        const w = getQualityWeight(def.quality, playerLvl) * 1.35;
         choices.push({
-          type: 'skill',
-          id: act.id,
-          isNew: false,
-          level: act.level + 1,
-          title: `【${getQualityBadge(def.quality)}】${def.name} Lv.${act.level + 1}`,
-          description: nextUpgrade ? `${nextUpgrade.title}：${nextUpgrade.description}` : def.desc,
-          iconId: def.iconId,
-          quality: def.quality
+    // Active skills upgrade
+    for (const act of this.activeSkills) {
+      const def = WOOWL_SKILLS[act.id];
+      if (def && act.level < def.maxLevel) {
+        const nextUpgrade = def.upgrades.find(u => u.level === act.level + 1);
+        const w = getQualityWeight(def.quality, playerLvl) * 1.35;
+        choices.push({
+          item: {
+            type: 'skill',
+            id: act.id,
+            isNew: false,
+            level: act.level + 1,
+            title: `【${getQualityBadge(def.quality)}】${def.name} Lv.${act.level + 1}`,
+            description: nextUpgrade ? `${nextUpgrade.title}：${nextUpgrade.description}` : def.desc,
+            iconId: def.iconId,
+            quality: def.quality
+          },
+          weight: w
         });
       }
     }
 
+    // New skills unlock
     if (this.activeSkills.length < 5) {
+      const availableSkills = Object.values(WOOWL_SKILLS).filter(s => s.classType === this.heroClass || s.classType === 'all');
       const unownedSkills = availableSkills.filter(s => !this.activeSkills.some(a => a.id === s.id));
       for (const s of unownedSkills) {
-        choices.push({
-          type: 'skill',
-          id: s.id,
-          isNew: true,
-          level: 1,
-          title: `【${getQualityBadge(s.quality)}】习得：${s.name}`,
-          description: s.desc,
-          iconId: s.iconId,
-          quality: s.quality
-        });
+        const w = getQualityWeight(s.quality, playerLvl);
+        if (w > 0) {
+          choices.push({
+            item: {
+              type: 'skill',
+              id: s.id,
+              isNew: true,
+              level: 1,
+              title: `【${getQualityBadge(s.quality)}】习得：${s.name}`,
+              description: s.desc,
+              iconId: s.iconId,
+              quality: s.quality
+            },
+            weight: w
+          });
+        }
+      }
+    }
       }
     }
 
+    // Passives
     const allPassives = Object.values(WOOWL_PASSIVES);
     for (const p of allPassives) {
       const existing = this.activePassives.find(a => a.id === p.id);
       const curLevel = existing ? existing.level : 0;
       if (curLevel < p.maxLevel) {
         choices.push({
-          type: 'passive',
-          id: p.id,
-          isNew: curLevel === 0,
-          level: curLevel + 1,
-          title: `宝物: 【${p.name}】Lv.${curLevel + 1}`,
-          description: p.desc,
-          iconId: p.iconId
+          item: {
+            type: 'passive',
+            id: p.id,
+            isNew: curLevel === 0,
+            level: curLevel + 1,
+            title: `宝物: 【${p.name}】Lv.${curLevel + 1}`,
+            description: p.desc,
+            iconId: p.iconId
+          },
+          weight: 45
         });
       }
     }
 
-    const shuffled = choices.sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
+    // Weighted selection of 3 unique choices
+    const selected: typeof this.upgradeChoices = [];
+    const pool = [...choices];
+
+    while (selected.length < 3 && pool.length > 0) {
+      const totalWeight = pool.reduce((sum, c) => sum + c.weight, 0);
+      let rand = Math.random() * totalWeight;
+      let pickedIdx = 0;
+      for (let i = 0; i < pool.length; i++) {
+        rand -= pool[i].weight;
+        if (rand <= 0) {
+          pickedIdx = i;
+          break;
+        }
+      }
+      selected.push(pool[pickedIdx].item);
+      pool.splice(pickedIdx, 1);
+    }
+
+    return selected;
   }
 
   selectUpgrade(choice: typeof this.upgradeChoices[0]) {
