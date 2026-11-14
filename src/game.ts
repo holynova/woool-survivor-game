@@ -1584,13 +1584,6 @@ export class GameEngine {
         const nextUpgrade = def.upgrades.find(u => u.level === act.level + 1);
         const w = getQualityWeight(def.quality, playerLvl) * 1.35;
         choices.push({
-    // Active skills upgrade
-    for (const act of this.activeSkills) {
-      const def = WOOWL_SKILLS[act.id];
-      if (def && act.level < def.maxLevel) {
-        const nextUpgrade = def.upgrades.find(u => u.level === act.level + 1);
-        const w = getQualityWeight(def.quality, playerLvl) * 1.35;
-        choices.push({
           item: {
             type: 'skill',
             id: act.id,
@@ -1627,8 +1620,6 @@ export class GameEngine {
             weight: w
           });
         }
-      }
-    }
       }
     }
 
@@ -1675,7 +1666,7 @@ export class GameEngine {
     return selected;
   }
 
-  selectUpgrade(choice: typeof this.upgradeChoices[0]) {
+  selectUpgrade(choice: GameEngine['upgradeChoices'][0]) {
     sound.play('ui_click');
 
     if (choice.type === 'skill') {
