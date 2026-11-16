@@ -213,6 +213,16 @@ export interface DifficultyCurveDefinition {
   bossDmgMult: number;
 }
 
+export interface AlertBanner {
+  type: 'elite' | 'boss';
+  title: string;
+  subtitle: string;
+  duration: number;
+  maxDuration: number;
+  x?: number;
+  y?: number;
+}
+
 export interface ChapterDefinition {
   id: string;
   name: string;

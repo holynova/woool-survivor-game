@@ -1,12 +1,29 @@
 import { assetUrl } from './utils';
 
+export type BgmTrack = 'menu' | 'battle' | 'boss';
+
 class AudioManager {
   private ctx: AudioContext | null = null;
   private buffers = new Map<string, AudioBuffer>();
   private muted = false;
+  private bgmVolume = 0.42;
+  private sfxVolume = 0.5;
+
+  // BGM streaming audio elements
+  private bgmElements: Record<BgmTrack, HTMLAudioElement | null> = {
+    menu: null,
+    battle: null,
+    boss: null
+  };
+  private currentBgmTrack: BgmTrack | null = null;
+  private bgmFadeInterval: any = null;
+
+  // SFX Throttling to prevent audio stuttering on multi-pickups
+  private lastCoinTime = 0;
+  private coinStreak = 0;
 
   constructor() {
-    // Lazy AudioContext on user gesture
+    // Audio elements created lazily or on init
   }
 
   private initCtx() {
@@ -21,8 +38,28 @@ class AudioManager {
     }
   }
 
+  private initBgmElements() {
+    if (typeof window === 'undefined') return;
+    if (!this.bgmElements.menu) {
+      const createAudio = (file: string) => {
+        const audio = new Audio(assetUrl(`assets/sound/${file}`));
+        audio.loop = true;
+        audio.preload = 'auto';
+        audio.volume = 0;
+        return audio;
+      };
+
+      try {
+        this.bgmElements.menu = createAudio('bgm_menu.mp3');
+        this.bgmElements.battle = createAudio('bgm_battle.mp3');
+        this.bgmElements.boss = createAudio('bgm_boss.mp3');
+      } catch {}
+    }
+  }
+
   async init(): Promise<void> {
     this.initCtx();
+    this.initBgmElements();
     await this.preloadAll();
   }
 
@@ -73,13 +110,163 @@ class AudioManager {
       const source = this.ctx.createBufferSource();
       const gain = this.ctx.createGain();
       source.buffer = buffer;
-      gain.gain.value = volume;
+      gain.gain.value = volume * this.sfxVolume;
       source.connect(gain);
       gain.connect(this.ctx.destination);
       source.start(0);
     } else {
-      // Synthesize fallback retro sound
-      this.synthesizeRetro(key, volume);
+      this.synthesizeRetro(key, volume * this.sfxVolume);
+    }
+  }
+
+  /**
+   * Crisp, satisfying pickup sound for gold coins and exp crystals
+   * Throttled with slight musical pitch ascension on combos
+   */
+  playCoinPickup(tier = 1) {
+    if (this.muted) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const now = performance.now();
+    if (now - this.lastCoinTime < 42) {
+      // Throttle rapid coin vacuum bursts to prevent acoustic distortion
+      return;
+    }
+    if (now - this.lastCoinTime < 350) {
+      this.coinStreak = Math.min(8, this.coinStreak + 1);
+    } else {
+      this.coinStreak = 0;
+    }
+    this.lastCoinTime = now;
+
+    const buffer = this.buffers.get('coin');
+    const basePitch = 0.94 + (tier - 1) * 0.08 + this.coinStreak * 0.035;
+    const finalVolume = (0.35 + (tier - 1) * 0.06) * this.sfxVolume;
+
+    if (buffer) {
+      const source = this.ctx.createBufferSource();
+      const gain = this.ctx.createGain();
+      source.buffer = buffer;
+      source.playbackRate.value = Math.max(0.7, Math.min(1.6, basePitch));
+      gain.gain.value = Math.min(0.65, finalVolume);
+      source.connect(gain);
+      gain.connect(this.ctx.destination);
+      source.start(0);
+    } else {
+      // Retro chime synthesizer fallback
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const t = this.ctx.currentTime;
+      osc.type = 'triangle';
+      const freq = 987 * Math.pow(1.059, this.coinStreak);
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.33, t + 0.08);
+      gain.gain.setValueAtTime(finalVolume * 0.6, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.12);
+    }
+  }
+
+  playPotionPickup() {
+    this.play('potion', 0.55);
+  }
+
+  playBossAlert() {
+    if (this.muted) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    // Resonant ancient war gong / alert boom synthesizer
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const t = this.ctx.currentTime;
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(260, t);
+    osc.frequency.exponentialRampToValueAtTime(55, t + 0.85);
+
+    gain.gain.setValueAtTime(0.65 * this.sfxVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.9);
+  }
+
+  playBgm(track: BgmTrack) {
+    this.initBgmElements();
+    if (this.currentBgmTrack === track) return;
+
+    const prevTrack = this.currentBgmTrack;
+    this.currentBgmTrack = track;
+
+    if (this.bgmFadeInterval) {
+      clearInterval(this.bgmFadeInterval);
+      this.bgmFadeInterval = null;
+    }
+
+    const prevAudio = prevTrack ? this.bgmElements[prevTrack] : null;
+    const nextAudio = this.bgmElements[track];
+
+    if (!nextAudio) return;
+
+    if (this.muted) {
+      if (prevAudio) {
+        prevAudio.pause();
+        prevAudio.currentTime = 0;
+      }
+      nextAudio.volume = 0;
+      nextAudio.play().catch(() => {});
+      return;
+    }
+
+    // Smooth crossfade
+    nextAudio.volume = 0;
+    const playPromise = nextAudio.play();
+    if (playPromise) {
+      playPromise.catch(() => {});
+    }
+
+    let step = 0;
+    const maxSteps = 15;
+    const targetVol = this.bgmVolume;
+
+    this.bgmFadeInterval = setInterval(() => {
+      step++;
+      const ratio = step / maxSteps;
+
+      if (prevAudio && !prevAudio.paused) {
+        prevAudio.volume = Math.max(0, targetVol * (1 - ratio));
+      }
+      nextAudio.volume = Math.min(targetVol, targetVol * ratio);
+
+      if (step >= maxSteps) {
+        clearInterval(this.bgmFadeInterval);
+        this.bgmFadeInterval = null;
+        if (prevAudio) {
+          prevAudio.pause();
+          prevAudio.currentTime = 0;
+        }
+        nextAudio.volume = targetVol;
+      }
+    }, 40);
+  }
+
+  stopBgm() {
+    if (this.bgmFadeInterval) {
+      clearInterval(this.bgmFadeInterval);
+      this.bgmFadeInterval = null;
+    }
+    if (this.currentBgmTrack && this.bgmElements[this.currentBgmTrack]) {
+      const audio = this.bgmElements[this.currentBgmTrack]!;
+      audio.pause();
+      audio.currentTime = 0;
+      this.currentBgmTrack = null;
     }
   }
 
@@ -128,11 +315,24 @@ class AudioManager {
 
   toggleMute(): boolean {
     this.muted = !this.muted;
+    if (this.muted) {
+      if (this.currentBgmTrack && this.bgmElements[this.currentBgmTrack]) {
+        this.bgmElements[this.currentBgmTrack]!.volume = 0;
+      }
+    } else {
+      if (this.currentBgmTrack && this.bgmElements[this.currentBgmTrack]) {
+        this.bgmElements[this.currentBgmTrack]!.volume = this.bgmVolume;
+      }
+    }
     return this.muted;
   }
 
   isMuted(): boolean {
     return this.muted;
+  }
+
+  getCurrentBgm(): BgmTrack | null {
+    return this.currentBgmTrack;
   }
 }
 

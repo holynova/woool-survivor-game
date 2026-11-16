@@ -128,6 +128,14 @@ export class BattleScene extends Phaser.Scene {
 
   private fxGraphics!: Phaser.GameObjects.Graphics;
   private uiGraphics!: Phaser.GameObjects.Graphics;
+  private screenUiGfx!: Phaser.GameObjects.Graphics;
+  private joystickGfx!: Phaser.GameObjects.Graphics;
+  private floorBorderGfx!: Phaser.GameObjects.Graphics;
+
+  // Floating Touch Joystick
+  private touchOrigin: { x: number; y: number } | null = null;
+  private touchCurrent: { x: number; y: number } | null = null;
+  private lastAlertDuration = 0;
 
   private fxSprites = new Set<Phaser.GameObjects.Sprite>();
   private fxTweens = new Set<Phaser.Tweens.Tween>();
@@ -226,25 +234,32 @@ export class BattleScene extends Phaser.Scene {
     this.groundTile.setDepth(-200);
 
     // Stone roads and central grand plaza
-    this.roadH = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, WORLD_WIDTH, 192, 'floor_stone');
+    this.roadH = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, WORLD_WIDTH, 224, 'floor_stone');
     this.roadH.setDepth(-195);
 
-    this.roadV = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 192, WORLD_HEIGHT, 'floor_stone');
+    this.roadV = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 224, WORLD_HEIGHT, 'floor_stone');
     this.roadV.setDepth(-195);
 
-    this.plazaTile = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 1056, 768, 'floor_stone');
+    this.plazaTile = this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 1152, 864, 'floor_stone');
     this.plazaTile.setDepth(-190);
+
+    // Stone borders, curbs, steps, and courtyard embellishments
+    this.floorBorderGfx = this.add.graphics().setDepth(-185);
+    this.drawFloorBorders();
 
     // 2. Modular Decor Objects (Y-depth sorted to eliminate rooftop bugs)
     this.buildDecorLayout();
 
     // 3. World Boundaries
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    this.cameras.main.setZoom(currentViewMode === 'mobile' ? 1.25 : 1.0);
 
     // 4. Graphics Layers
     this.playerShadow = this.add.graphics().setDepth(5);
     this.fxGraphics = this.add.graphics().setDepth(2000);
     this.uiGraphics = this.add.graphics().setDepth(3000);
+    this.screenUiGfx = this.add.graphics().setDepth(3500).setScrollFactor(0);
+    this.joystickGfx = this.add.graphics().setDepth(4500).setScrollFactor(0);
 
     // 5. Player Shield Sprite
     this.playerShieldSprite = this.add.sprite(game.player.x, game.player.y, 'fx_1008');
@@ -273,6 +288,104 @@ export class BattleScene extends Phaser.Scene {
         d: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
       };
     }
+
+    // Floating Touch / Pointer Joystick Setup
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      this.touchOrigin = { x: pointer.x, y: pointer.y };
+      this.touchCurrent = { x: pointer.x, y: pointer.y };
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (this.touchOrigin && pointer.isDown) {
+        this.touchCurrent = { x: pointer.x, y: pointer.y };
+      }
+    });
+
+    const resetJoystick = () => {
+      this.touchOrigin = null;
+      this.touchCurrent = null;
+      if (this.joystickGfx) this.joystickGfx.clear();
+      game.setInput(0, 0);
+    };
+
+    this.input.on('pointerup', resetJoystick);
+    this.input.on('pointerupoutside', resetJoystick);
+  }
+
+  private drawFloorBorders() {
+    const gfx = this.floorBorderGfx;
+    gfx.clear();
+
+    const cx = WORLD_WIDTH / 2;
+    const cy = WORLD_HEIGHT / 2;
+    const pw = 1152;
+    const ph = 864;
+    const px = cx - pw / 2;
+    const py = cy - ph / 2;
+
+    // 1. Plaza outer ambient shadow for organic blending
+    gfx.fillStyle(0x06080a, 0.42);
+    gfx.fillRect(px - 16, py - 16, pw + 32, ph + 32);
+
+    // 2. Plaza antique granite curb
+    gfx.lineStyle(12, 0x3d352b, 0.95);
+    gfx.strokeRect(px, py, pw, ph);
+
+    // 3. Plaza inner gold/bronze decorative inlay line
+    gfx.lineStyle(2, 0x8a724a, 0.75);
+    gfx.strokeRect(px + 6, py + 6, pw - 12, ph - 12);
+
+    // 4. Four corner ornate brackets
+    const bracketSize = 36;
+    const corners = [
+      { x: px + 6, y: py + 6, dx: 1, dy: 1 },
+      { x: px + pw - 6, y: py + 6, dx: -1, dy: 1 },
+      { x: px + 6, y: py + ph - 6, dx: 1, dy: -1 },
+      { x: px + pw - 6, y: py + ph - 6, dx: -1, dy: -1 }
+    ];
+    gfx.lineStyle(4, 0xb89b5f, 0.9);
+    for (const c of corners) {
+      gfx.beginPath();
+      gfx.moveTo(c.x, c.y + c.dy * bracketSize);
+      gfx.lineTo(c.x, c.y);
+      gfx.lineTo(c.x + c.dx * bracketSize, c.y);
+      gfx.strokePath();
+    }
+
+    // 5. Four Entry Flagstone Steps
+    const roadW = 224;
+    // North entry steps
+    for (let s = 0; s < 3; s++) {
+      gfx.lineStyle(2.5, 0x221c17, 0.85);
+      gfx.lineBetween(cx - roadW / 2 + 8, py + s * 7, cx + roadW / 2 - 8, py + s * 7);
+    }
+    // South entry steps
+    for (let s = 0; s < 3; s++) {
+      gfx.lineStyle(2.5, 0x221c17, 0.85);
+      gfx.lineBetween(cx - roadW / 2 + 8, py + ph - s * 7, cx + roadW / 2 - 8, py + ph - s * 7);
+    }
+    // West entry steps
+    for (let s = 0; s < 3; s++) {
+      gfx.lineStyle(2.5, 0x221c17, 0.85);
+      gfx.lineBetween(px + s * 7, cy - roadW / 2 + 8, px + s * 7, cy + roadW / 2 - 8);
+    }
+    // East entry steps
+    for (let s = 0; s < 3; s++) {
+      gfx.lineStyle(2.5, 0x221c17, 0.85);
+      gfx.lineBetween(px + pw - s * 7, cy - roadW / 2 + 8, px + pw - s * 7, cy + roadW / 2 - 8);
+    }
+
+    // 6. Road curb edges
+    gfx.lineStyle(6, 0x3d352b, 0.85);
+    gfx.lineBetween(0, cy - roadW / 2, px, cy - roadW / 2);
+    gfx.lineBetween(px + pw, cy - roadW / 2, WORLD_WIDTH, cy - roadW / 2);
+    gfx.lineBetween(0, cy + roadW / 2, px, cy + roadW / 2);
+    gfx.lineBetween(px + pw, cy + roadW / 2, WORLD_WIDTH, cy + roadW / 2);
+
+    gfx.lineBetween(cx - roadW / 2, 0, cx - roadW / 2, py);
+    gfx.lineBetween(cx - roadW / 2, py + ph, cx - roadW / 2, WORLD_HEIGHT);
+    gfx.lineBetween(cx + roadW / 2, 0, cx + roadW / 2, py);
+    gfx.lineBetween(cx + roadW / 2, py + ph, cx + roadW / 2, WORLD_HEIGHT);
   }
 
   private buildDecorLayout() {
@@ -303,6 +416,14 @@ export class BattleScene extends Phaser.Scene {
       this.clearTransientFx();
     }
     this.lastGameClock = game.clock;
+
+    // Camera shake on high-threat Boss / Elite arrival
+    if (game.alertBanner && game.alertBanner.duration > game.alertBanner.maxDuration - 0.15) {
+      if (this.lastAlertDuration !== game.alertBanner.duration) {
+        this.lastAlertDuration = game.alertBanner.duration;
+        this.cameras.main.shake(game.alertBanner.type === 'boss' ? 550 : 320, game.alertBanner.type === 'boss' ? 0.012 : 0.007);
+      }
+    }
 
     // Sync Background Floor if chapter changed
     if (this.currentChapterId !== game.chapterId) {
@@ -348,18 +469,58 @@ export class BattleScene extends Phaser.Scene {
       if (this.cursors.down.isDown || this.wasd?.s.isDown) iy += 1;
     }
 
-    // Pointer input
-    const pointer = this.input.activePointer;
-    if (pointer.isDown) {
-      const screenCenterX = this.cameras.main.width / 2;
-      const screenCenterY = this.cameras.main.height / 2;
-      const pdx = pointer.x - screenCenterX;
-      const pdy = pointer.y - screenCenterY;
-      const dist = Math.hypot(pdx, pdy);
-      if (dist > 25) {
-        ix = pdx / dist;
-        iy = pdy / dist;
+    // Touch / Pointer Floating Joystick
+    if (this.touchOrigin && this.touchCurrent) {
+      const dx = this.touchCurrent.x - this.touchOrigin.x;
+      const dy = this.touchCurrent.y - this.touchOrigin.y;
+      const dist = Math.hypot(dx, dy);
+      const maxRadius = 55;
+
+      if (dist > 8) {
+        const normX = dx / dist;
+        const normY = dy / dist;
+        const intensity = Math.min(1.0, (dist - 8) / (maxRadius - 8));
+        ix = normX * intensity;
+        iy = normY * intensity;
       }
+
+      // Render Visual Dragon Ring Floating Joystick
+      const gfx = this.joystickGfx;
+      gfx.clear();
+
+      const ox = this.touchOrigin.x;
+      const oy = this.touchOrigin.y;
+
+      // Outer Bronze Base
+      gfx.fillStyle(0x0e1218, 0.45);
+      gfx.fillCircle(ox, oy, 55);
+
+      // Gold Dragon Ring
+      gfx.lineStyle(3, 0xd4af37, 0.85);
+      gfx.strokeCircle(ox, oy, 55);
+
+      // Inner Rune Ring
+      gfx.lineStyle(1.5, 0x8a6d3b, 0.5);
+      gfx.strokeCircle(ox, oy, 28);
+
+      // Joystick Knob
+      const clampedDist = Math.min(maxRadius, dist);
+      const kx = ox + (dist > 0 ? (dx / dist) * clampedDist : 0);
+      const ky = oy + (dist > 0 ? (dy / dist) * clampedDist : 0);
+
+      // Knob Shadow & Outer Body
+      gfx.fillStyle(0x1a212d, 0.85);
+      gfx.fillCircle(kx, ky, 22);
+      gfx.lineStyle(2.5, 0xf3ba42, 0.95);
+      gfx.strokeCircle(kx, ky, 22);
+
+      // Center Amber Gem
+      gfx.fillStyle(0xd35400, 0.9);
+      gfx.fillCircle(kx, ky, 7);
+      gfx.lineStyle(1, 0xffffff, 0.9);
+      gfx.strokeCircle(kx, ky, 7);
+    } else {
+      if (this.joystickGfx) this.joystickGfx.clear();
     }
 
     game.inputX = ix;
@@ -968,6 +1129,72 @@ export class BattleScene extends Phaser.Scene {
         this.damageTexts.delete(id);
       }
     }
+
+    // 5. Offscreen Elite & Boss Direction Indicators
+    const screenGfx = this.screenUiGfx;
+    screenGfx.clear();
+
+    const cam = this.cameras.main;
+    const viewL = cam.worldView.x;
+    const viewR = cam.worldView.x + cam.worldView.width;
+    const viewT = cam.worldView.y;
+    const viewB = cam.worldView.y + cam.worldView.height;
+    const screenW = cam.width;
+    const screenH = cam.height;
+    const screenCenterX = screenW / 2;
+    const screenCenterY = screenH / 2;
+
+    for (const m of game.monsters) {
+      if ((m.isBoss || m.isElite) && m.hp > 0) {
+        const isOffscreen = m.x < viewL || m.x > viewR || m.y < viewT || m.y > viewB;
+        if (isOffscreen) {
+          const worldDx = m.x - game.player.x;
+          const worldDy = m.y - game.player.y;
+          const ang = Math.atan2(worldDy, worldDx);
+
+          // Margin from screen boundary
+          const margin = 42;
+          const halfW = (screenW / 2) - margin;
+          const halfH = (screenH / 2) - margin;
+
+          let ix = screenCenterX;
+          let iy = screenCenterY;
+
+          const cosA = Math.cos(ang);
+          const sinA = Math.sin(ang);
+          const tanA = Math.tan(ang);
+
+          if (Math.abs(cosA) * halfH > Math.abs(sinA) * halfW) {
+            ix = screenCenterX + Math.sign(cosA) * halfW;
+            iy = screenCenterY + Math.sign(cosA) * halfW * tanA;
+          } else {
+            iy = screenCenterY + Math.sign(sinA) * halfH;
+            ix = screenCenterX + (Math.sign(sinA) * halfH) / (tanA || 0.0001);
+          }
+
+          const arrowColor = m.isBoss ? 0xff0033 : 0xffaa00;
+          const pulse = Math.sin(game.clock * 8) * 3;
+          const arrowSize = (m.isBoss ? 16 : 12) + pulse;
+
+          // Oriented triangle pointing towards enemy
+          const ax = ix + cosA * arrowSize;
+          const ay = iy + sinA * arrowSize;
+          const bx = ix + Math.cos(ang + 2.4) * arrowSize;
+          const by = iy + Math.sin(ang + 2.4) * arrowSize;
+          const cx = ix + Math.cos(ang - 2.4) * arrowSize;
+          const cy = iy + Math.sin(ang - 2.4) * arrowSize;
+
+          screenGfx.fillStyle(arrowColor, 0.95);
+          screenGfx.fillTriangle(ax, ay, bx, by, cx, cy);
+          screenGfx.lineStyle(2, 0xffffff, 0.95);
+          screenGfx.strokeTriangle(ax, ay, bx, by, cx, cy);
+
+          // Indicator glow circle
+          screenGfx.fillStyle(arrowColor, 0.35);
+          screenGfx.fillCircle(ix, iy, arrowSize * 0.85);
+        }
+      }
+    }
   }
 
   private createAnimFromAtlas(
@@ -1054,6 +1281,17 @@ export class BattleScene extends Phaser.Scene {
 }
 
 let gameInstance: Phaser.Game | null = null;
+let currentViewMode: 'desktop' | 'mobile' = 'desktop';
+
+export function setViewMode(mode: 'desktop' | 'mobile') {
+  currentViewMode = mode;
+  if (gameInstance) {
+    const scene = gameInstance.scene.getScene('BattleScene') as BattleScene;
+    if (scene && scene.cameras && scene.cameras.main) {
+      scene.cameras.main.setZoom(mode === 'mobile' ? 1.25 : 1.0);
+    }
+  }
+}
 
 export function bootPhaser() {
   if (gameInstance) return;

@@ -8,9 +8,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   scarecrow: {
     id: 'scarecrow',
     name: '稻草人',
-    hp: 85,
-    speed: 68, // Slow meat shield
-    damage: 13,
+    hp: 90,
+    speed: 85, // Swarming meat shield
+    damage: 14,
     exp: 4,
     radius: 24,
     spriteKey: '20112'
@@ -18,9 +18,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   deer: {
     id: 'deer',
     name: '狂暴角鹿',
-    hp: 82,
-    speed: 120, // Medium charger
-    damage: 15,
+    hp: 88,
+    speed: 140, // Fast charger
+    damage: 16,
     exp: 5,
     radius: 24,
     spriteKey: '20072'
@@ -28,9 +28,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   snake: {
     id: 'snake',
     name: '剧毒蟒蛇',
-    hp: 55,
-    speed: 185, // Ultra fast slitherer
-    damage: 16,
+    hp: 60,
+    speed: 195, // Ultra-fast slitherer snapping at player's heels
+    damage: 18,
     exp: 4,
     radius: 20,
     spriteKey: '20038'
@@ -38,9 +38,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   wild_boar: {
     id: 'wild_boar',
     name: '红野猪',
-    hp: 185,
-    speed: 105, // Heavy charger
-    damage: 19,
+    hp: 210,
+    speed: 128, // Heavy charger
+    damage: 22,
     exp: 7,
     radius: 26,
     spriteKey: '20046'
@@ -48,9 +48,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   blade_hound: {
     id: 'blade_hound',
     name: '妖化刀犬',
-    hp: 135,
-    speed: 172, // Fast flanking rusher
-    damage: 20,
+    hp: 155,
+    speed: 185, // Fast flanking predator
+    damage: 22,
     exp: 6,
     radius: 25,
     spriteKey: '20111'
@@ -58,9 +58,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   skeleton: {
     id: 'skeleton',
     name: '白骨骷髅',
-    hp: 240,
-    speed: 88, // Relentless marching horde
-    damage: 22,
+    hp: 280,
+    speed: 105, // Relentless marching horde
+    damage: 25,
     exp: 9,
     radius: 27,
     spriteKey: '20081'
@@ -68,9 +68,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   enhanced_skeleton: {
     id: 'enhanced_skeleton',
     name: '双斧骷髅将',
-    hp: 420,
-    speed: 82, // Tanky dual axe warrior
-    damage: 28,
+    hp: 500,
+    speed: 100, // Tanky dual axe warrior with dash bursts
+    damage: 32,
     exp: 18,
     radius: 30,
     spriteKey: '20082'
@@ -78,9 +78,9 @@ export const WOOWL_MONSTERS: Record<string, MonsterArchetype> = {
   shinsu_puppet: {
     id: 'shinsu_puppet',
     name: '赤炎兽傀儡',
-    hp: 680,
-    speed: 62, // Slow colossal tank
-    damage: 36,
+    hp: 800,
+    speed: 80, // Colossal tank
+    damage: 40,
     exp: 28,
     radius: 34,
     spriteKey: '20085'
@@ -92,65 +92,65 @@ export const WOOWL_DIFFICULTY_CURVES: Record<DifficultyCurveId, DifficultyCurveD
     id: 'casual',
     name: '逍遥割草',
     badge: '爽刷流',
-    summary: '怪潮密集脆皮，经验获取+40%，技能冷却更迅捷，适合轻松解压一招清屏无双割草。',
-    hpMult: 0.65,
-    dmgMult: 0.58,
-    speedMult: 0.90,
-    densityMult: 1.40,
-    expMult: 1.40,
+    summary: '怪潮密集，技能冷却更迅捷，适合轻松解压一招清屏无双割草。',
+    hpMult: 0.72,
+    dmgMult: 0.62,
+    speedMult: 0.94,
+    densityMult: 1.45,
+    expMult: 1.35,
     cdMult: 0.84,
-    eliteInterval: 34,
+    eliteInterval: 30,
     bossTimeScale: 0.90,
-    bossHpMult: 0.70,
-    bossDmgMult: 0.65
+    bossHpMult: 0.85,
+    bossDmgMult: 0.75
   },
   standard: {
     id: 'standard',
     name: '中州正统',
     badge: '推荐',
-    summary: '张弛有度的波浪锯齿曲线：发育起势 → 第一波兽潮 → 整备收割 → 百鬼狂潮 → 决战魔主。',
-    hpMult: 1.0,
-    dmgMult: 1.0,
-    speedMult: 1.0,
-    densityMult: 1.08,
+    summary: '经典硬派吸血鬼幸存者节奏：起势试探 → 狂暴兽潮 → 聚灵整备 → 百鬼夜行 → 决战魔尊。',
+    hpMult: 1.15,
+    dmgMult: 1.12,
+    speedMult: 1.08,
+    densityMult: 1.25,
     expMult: 1.12,
-    cdMult: 0.95,
-    eliteInterval: 23,
+    cdMult: 0.96,
+    eliteInterval: 22,
     bossTimeScale: 1.0,
-    bossHpMult: 1.05,
-    bossDmgMult: 1.05
+    bossHpMult: 1.30,
+    bossDmgMult: 1.20
   },
   surge: {
     id: 'surge',
     name: '狂潮骤变',
     badge: '暴走潮汐',
-    summary: '指数级尸潮狂涌，同屏怪物激增65%，经验丰沛且技能紧凑，追求极限AOE清屏爽感与高压走位。',
-    hpMult: 0.94,
-    dmgMult: 1.18,
-    speedMult: 1.10,
-    densityMult: 1.65,
+    summary: '指数级尸潮狂涌，同屏怪物激增80%，追求极限AOE清屏爽感与高压走位。',
+    hpMult: 1.25,
+    dmgMult: 1.40,
+    speedMult: 1.24,
+    densityMult: 1.85,
     expMult: 1.25,
     cdMult: 0.88,
-    eliteInterval: 18,
+    eliteInterval: 16,
     bossTimeScale: 1.0,
-    bossHpMult: 1.30,
-    bossDmgMult: 1.20
+    bossHpMult: 1.65,
+    bossDmgMult: 1.40
   },
   hell: {
     id: 'hell',
     name: '铁血炼狱',
     badge: '硬核挑战',
-    summary: '妖魔凶悍狂暴、双精英频繁袭杀，站桩必败，必须依靠风筝走位与防御秘宝方能突围克敌。',
-    hpMult: 1.24,
-    dmgMult: 1.32,
-    speedMult: 1.12,
-    densityMult: 1.25,
+    summary: '妖魔凶悍狂暴、精英频繁袭杀，站桩必败，必须依靠风筝走位与防御秘宝方能突围克敌。',
+    hpMult: 1.65,
+    dmgMult: 1.60,
+    speedMult: 1.28,
+    densityMult: 1.55,
     expMult: 1.15,
-    cdMult: 0.96,
-    eliteInterval: 18,
+    cdMult: 0.98,
+    eliteInterval: 16,
     bossTimeScale: 0.95,
-    bossHpMult: 1.48,
-    bossDmgMult: 1.35
+    bossHpMult: 1.95,
+    bossDmgMult: 1.65
   }
 };
 
@@ -269,12 +269,12 @@ export function evaluateCurveState(
   const effectiveChapterSpd = 1 + (chapterDifficulty - 1) * 0.08;
 
   // Progressive non-linear pacing modeled after Vampire Survivors:
-  // Early game (p = 0..0.22): 4-8 deliberate enemies. Takes 2-3 hits to kill each, letting player warm up.
-  // Mid game (p = 0.22..0.6): 16-32 enemies, mini-hordes.
-  // Late game (p = 0.6..1.0): 45-75 enemies, full pressure hordes.
-  const baseCount = 5 + Math.pow(p, 1.35) * 50;
-  const targetCount = Math.min(85, Math.max(4, Math.round(baseCount * waveDensityFactor * curve.densityMult)));
-  const spawnChancePerSec = Math.min(14, (0.75 + Math.pow(p, 1.25) * 8.8) * waveDensityFactor * curve.densityMult);
+  // Early game (p = 0..0.22): 8-15 active enemies.
+  // Mid game (p = 0.22..0.6): 30-65 enemies, intense swarm waves.
+  // Late game (p = 0.6..1.0): 75-135 enemies, full pressure horde survival.
+  const baseCount = 8 + Math.pow(p, 1.32) * 78;
+  const targetCount = Math.min(135, Math.max(6, Math.round(baseCount * waveDensityFactor * curve.densityMult)));
+  const spawnChancePerSec = Math.min(22, (1.2 + Math.pow(p, 1.25) * 12.5) * waveDensityFactor * curve.densityMult);
 
   return {
     phaseIndex,

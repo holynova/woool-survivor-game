@@ -10,7 +10,8 @@ import type {
   MinionEntity,
   DropEntity,
   DamageNumber,
-  EffectEvent
+  EffectEvent,
+  AlertBanner
 } from './types';
 import { WOOWL_SKILLS, WOOWL_PASSIVES } from './config/skills';
 import { WOOWL_CHAPTERS } from './config/chapters';
@@ -108,6 +109,7 @@ export class GameEngine {
   drops: DropEntity[] = [];
   damageNumbers: DamageNumber[] = [];
   effects: EffectEvent[] = [];
+  alertBanner: AlertBanner | null = null;
 
   upgradeChoices: Array<{
     type: 'skill' | 'passive';
@@ -167,6 +169,8 @@ export class GameEngine {
     this.drops = [];
     this.damageNumbers = [];
     this.effects = [];
+    this.alertBanner = null;
+    sound.playBgm('menu');
     this.emit();
   }
 
@@ -194,6 +198,8 @@ export class GameEngine {
     this.drops = [];
     this.damageNumbers = [];
     this.effects = [];
+    this.alertBanner = null;
+    sound.playBgm('battle');
     this.activeSkills = [];
     this.activePassives = [];
     this.shieldReduction = 0.4;
@@ -250,6 +256,13 @@ export class GameEngine {
     const clampedDt = Math.min(dt, 0.1);
     this.clock += clampedDt;
     this.waveTimer += clampedDt;
+
+    if (this.alertBanner) {
+      this.alertBanner.duration -= clampedDt;
+      if (this.alertBanner.duration <= 0) {
+        this.alertBanner = null;
+      }
+    }
 
     if (this.player.hp < this.player.maxHp) {
       this.player.hp = Math.min(this.player.maxHp, this.player.hp + this.player.hpRegen * clampedDt);
@@ -1190,8 +1203,12 @@ export class GameEngine {
     const chap = WOOWL_CHAPTERS[this.chapterId] || WOOWL_CHAPTERS.sunset_island;
     const weightedPool = chap.monsterPool.map(item => {
       let w = item.weight;
-      if (progress < 0.20 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
-        w = 0;
+      if (progress < 0.15) {
+        if (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton' || item.typeId === 'skeleton') {
+          w = Math.max(0, Math.round(w * 0.15));
+        } else if (item.typeId === 'wild_boar') {
+          w = Math.max(1, Math.round(w * 0.35));
+        }
       } else if (progress < 0.45 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
         w = Math.max(1, Math.round(w * 0.35));
       } else if (progress >= 0.70 && (item.typeId === 'shinsu_puppet' || item.typeId === 'enhanced_skeleton')) {
@@ -1199,6 +1216,11 @@ export class GameEngine {
       }
       return { typeId: item.typeId, weight: w };
     });
+
+    if (progress < 0.15) {
+      weightedPool.push({ typeId: 'scarecrow', weight: Math.round(32 * (1 - progress / 0.15)) });
+      weightedPool.push({ typeId: 'deer', weight: Math.round(24 * (1 - progress / 0.15)) });
+    }
 
     const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
     let r = Math.random() * totalWeight;
@@ -1221,13 +1243,13 @@ export class GameEngine {
     const y = Math.max(80, Math.min(WORLD_HEIGHT - 80, this.player.y + Math.sin(angle) * dist));
 
     const pickedType = isElite
-      ? (Math.random() < 0.5 ? 'enhanced_skeleton' : this.pickMonsterFromPool(state.progress))
+      ? (state.progress < 0.22 ? this.pickMonsterFromPool(state.progress) : (Math.random() < 0.5 ? 'enhanced_skeleton' : this.pickMonsterFromPool(state.progress)))
       : this.pickMonsterFromPool(state.progress);
     const arch = WOOWL_MONSTERS[pickedType] || WOOWL_MONSTERS.scarecrow;
 
-    const eliteHpMult = isElite ? 3.2 : 1.0;
-    const eliteDmgMult = isElite ? 1.35 : 1.0;
-    const eliteSpeedMult = isElite ? 1.12 : 1.0;
+    const eliteHpMult = isElite ? 2.8 : 1.0;
+    const eliteDmgMult = isElite ? 1.30 : 1.0;
+    const eliteSpeedMult = isElite ? 1.10 : 1.0;
 
     const finalHp = Math.max(12, Math.round(arch.hp * state.hpMult * eliteHpMult));
     const finalDmg = Math.max(5, Math.round(arch.damage * state.dmgMult * eliteDmgMult));
@@ -1253,6 +1275,16 @@ export class GameEngine {
 
     if (isElite) {
       this.addDamageNumber(x, y - 20, `【精英 ${arch.name} 来袭】`, '#c084fc', true);
+      this.alertBanner = {
+        type: 'elite',
+        title: '【精英妖魔突袭】',
+        subtitle: `【精英】${arch.name} 破阵狂袭！速速迎敌！`,
+        duration: 3.5,
+        maxDuration: 3.5,
+        x,
+        y
+      };
+      sound.playBossAlert();
     }
   }
 
@@ -1313,6 +1345,16 @@ export class GameEngine {
     });
 
     this.addDamageNumber(x, y - 25, `【领主降临】${name}`, '#ff4400', true);
+    this.alertBanner = {
+      type: 'elite',
+      title: '【霸主魔物现世】',
+      subtitle: `${name} 携万钧煞气降临中州！`,
+      duration: 5.0,
+      maxDuration: 5.0,
+      x,
+      y
+    };
+    sound.playBossAlert();
   }
 
   private spawnBoss() {
@@ -1345,6 +1387,18 @@ export class GameEngine {
       dashCd: 4.0,
       spriteKey: chap.bossSpriteKey || '20082'
     });
+
+    this.alertBanner = {
+      type: 'boss',
+      title: '【终局魔尊现世】',
+      subtitle: `镇守魔主【${chap.bossName}】携毁天灭地魔威降临！决战中州！`,
+      duration: 6.5,
+      maxDuration: 6.5,
+      x,
+      y
+    };
+    sound.playBossAlert();
+    sound.playBgm('boss');
 
     this.addDamageNumber(x, y, `【灭世魔主 · ${chap.bossName} 降临！】`, '#ff0033', true);
   }
@@ -1401,6 +1455,7 @@ export class GameEngine {
       this.player.hp = 0;
       this.phase = 'game_over';
       sound.play('player_die');
+      sound.stopBgm();
     }
   }
 
@@ -1455,6 +1510,7 @@ export class GameEngine {
       });
       this.bossDefeated = true;
       this.phase = 'victory';
+      sound.playBgm('menu');
     } else if (m.isElite) {
       // Elite drops 3 gold coin piles + potion
       for (let i = 0; i < 3; i++) {
@@ -1504,14 +1560,14 @@ export class GameEngine {
         if (dist <= 32) {
           if (d.type === 'exp') {
             this.gainExp(d.value);
-            sound.play('coin', 0.3);
+            sound.playCoinPickup(d.tier || 1);
           } else if (d.type === 'gold') {
             this.player.gold += d.value;
-            sound.play('coin', 0.4);
+            sound.playCoinPickup(d.tier || 1);
           } else if (d.type === 'potion') {
             const healAmt = d.value || 40;
             this.player.hp = Math.min(this.player.maxHp, this.player.hp + healAmt);
-            sound.play('potion', 0.5);
+            sound.playPotionPickup();
             this.addDamageNumber(this.player.x, this.player.y, `+${healAmt} 气血`, '#44ff44');
           }
           this.drops.splice(i, 1);

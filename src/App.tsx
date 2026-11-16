@@ -1,14 +1,14 @@
 import React, { useState, useSyncExternalStore, useEffect } from 'react';
-import { game, getQualityBadge, getQualityColor } from './game';
+import { game, getQualityBadge } from './game';
 import { WOOWL_SKILLS, WOOWL_PASSIVES } from './config/skills';
 import { WOOWL_CHAPTERS } from './config/chapters';
 import { WOOWL_DIFFICULTY_CURVES } from './config/curves';
 import type { HeroClass, DifficultyCurveId } from './types';
 import { sound } from './audio';
-import { bootPhaser } from './renderer';
+import { bootPhaser, setViewMode as setViewModeInRenderer } from './renderer';
 import { assetUrl } from './utils';
 
-const APP_VERSION = 'v0.2.5';
+const APP_VERSION = 'v0.2.6';
 const GITHUB_REPO_URL = 'https://github.com/holynova/woool-survivor-game';
 
 function useGameState() {
@@ -25,15 +25,67 @@ const CLASS_HEAD_MAP: Record<HeroClass, string> = {
   taoist: 'head_3.png'
 };
 
+function detectInitialMode(): 'desktop' | 'mobile' {
+  if (typeof window === 'undefined') return 'desktop';
+  const urlParams = new URLSearchParams(window.location.search);
+  const modeParam = urlParams.get('mode');
+  if (modeParam === 'mobile' || modeParam === 'desktop') {
+    return modeParam;
+  }
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isNarrowScreen = window.innerWidth <= 768;
+  return (isMobileUA || isNarrowScreen) ? 'mobile' : 'desktop';
+}
+
 export function App() {
   const state = useGameState();
   const [selectedClass, setSelectedClass] = useState<HeroClass>('wizard');
   const [selectedChapter, setSelectedChapter] = useState('sunset_island');
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyCurveId>('standard');
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(detectInitialMode());
+  const [isMuted, setIsMuted] = useState(sound.isMuted());
 
   useEffect(() => {
     bootPhaser();
+    setViewModeInRenderer(viewMode);
+
+    // Audio unlocking on first user interaction
+    const unlockAudio = () => {
+      sound.init();
+      if (game.phase === 'lobby' && !sound.getCurrentBgm()) {
+        sound.playBgm('menu');
+      }
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
+
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+
+    return () => {
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
   }, []);
+
+  const handleToggleMode = () => {
+    const nextMode = viewMode === 'mobile' ? 'desktop' : 'mobile';
+    setViewMode(nextMode);
+    setViewModeInRenderer(nextMode);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('mode', nextMode);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
+
+  const handleToggleMute = () => {
+    const muted = sound.toggleMute();
+    setIsMuted(muted);
+  };
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -62,7 +114,17 @@ export function App() {
   const activeCurve = WOOWL_DIFFICULTY_CURVES[state.difficultyId] || WOOWL_DIFFICULTY_CURVES.standard;
 
   return (
-    <div className="game-container">
+    <div className={`game-container ${viewMode === 'mobile' ? 'mobile-mode' : 'desktop-mode'}`}>
+      {/* GLOBAL SCREEN TOGGLE BAR */}
+      <div className="global-mode-bar">
+        <button className="mode-toggle-btn" onClick={handleToggleMode}>
+          {viewMode === 'mobile' ? '切换电脑版' : '切换手机版'}
+        </button>
+        <button className="sound-toggle-btn" onClick={handleToggleMute}>
+          {isMuted ? '音乐: 静音' : '音乐: 开启'}
+        </button>
+      </div>
+
       {/* 1. LOBBY SCREEN (AUTHENTIC WOOOL STYLE) */}
       {state.phase === 'lobby' && (
         <div className="lobby-overlay" style={{ backgroundImage: `url(${assetUrl('assets/woool/role/bg.jpg')})` }}>
@@ -198,7 +260,7 @@ export function App() {
                 目标：存活 {bossMinutes} 分钟，击败降临的魔主即获胜
               </div>
               <div className="controls-hint">
-                操作提示：使用键盘 [W A S D] 或 [方向键] 移动，支持触屏鼠标拖动滑行，技能全部自动释放
+                操作提示：电脑端使用 [W A S D] 或方向键；手机端全屏任意位置按下滑动浮动摇杆，技能全自动释放
               </div>
               <div className="lobby-footer-meta">
                 <span>传世幸存者 {APP_VERSION}</span>
@@ -208,6 +270,21 @@ export function App() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BOSS & ELITE HIGH-ALERT WARNING BANNER */}
+      {state.alertBanner && (
+        <div className={`boss-warning-banner banner-${state.alertBanner.type}`}>
+          <div className="banner-glow-bg" />
+          <div className="banner-content">
+            <span className="banner-dragon-crest left" />
+            <div className="banner-texts">
+              <div className="banner-title">{state.alertBanner.title}</div>
+              <div className="banner-sub">{state.alertBanner.subtitle}</div>
+            </div>
+            <span className="banner-dragon-crest right" />
           </div>
         </div>
       )}
@@ -298,42 +375,108 @@ export function App() {
             )}
           </div>
 
-          {/* Authentic Woool Bottom Bar */}
-          <div className="hud-bottom-container">
-            <div className="classic-woool-bottom-bar">
-              <img src={assetUrl('assets/woool/ui/main_bottom.png')} className="bottom-bar-bg" alt="" />
+          {/* DESKTOP BOTTOM BAR */}
+          {viewMode === 'desktop' ? (
+            <div className="hud-bottom-container">
+              <div className="classic-woool-bottom-bar">
+                <img src={assetUrl('assets/woool/ui/main_bottom.png')} className="bottom-bar-bg" alt="" />
 
-              {/* Iconic Taiji Dragon Orb (Left Half HP Red, Right Half MP Blue) */}
-              <div className="woool-taiji-orb">
-                {/* Left HP Crescent */}
-                <div className="taiji-crescent crescent-hp" title={`气血: ${Math.ceil(state.player.hp)} / ${state.player.maxHp}`}>
-                  <div
-                    className="crescent-fill"
-                    style={{ height: `${Math.max(0, Math.min(100, (state.player.hp / state.player.maxHp) * 100))}%` }}
-                  >
-                    <img src={assetUrl('assets/woool/ui/hp_progress.png')} className="crescent-img" alt="HP" />
+                {/* Iconic Taiji Dragon Orb */}
+                <div className="woool-taiji-orb">
+                  {/* Left HP Crescent */}
+                  <div className="taiji-crescent crescent-hp" title={`气血: ${Math.ceil(state.player.hp)} / ${state.player.maxHp}`}>
+                    <div
+                      className="crescent-fill"
+                      style={{ height: `${Math.max(0, Math.min(100, (state.player.hp / state.player.maxHp) * 100))}%` }}
+                    >
+                      <img src={assetUrl('assets/woool/ui/hp_progress.png')} className="crescent-img" alt="HP" />
+                    </div>
                   </div>
+
+                  {/* Right MP Crescent */}
+                  <div className="taiji-crescent crescent-mp" title={`内力: ${Math.ceil(state.player.mp)} / ${state.player.maxMp}`}>
+                    <div
+                      className="crescent-fill"
+                      style={{ height: `${Math.max(0, Math.min(100, (state.player.mp / state.player.maxMp) * 100))}%` }}
+                    >
+                      <img src={assetUrl('assets/woool/ui/mp_progress.png')} className="crescent-img" alt="MP" />
+                    </div>
+                  </div>
+
+                  <div className="taiji-label-hp">{Math.ceil(state.player.hp)}</div>
+                  <div className="taiji-label-mp">{Math.ceil(state.player.mp)}</div>
                 </div>
 
-                {/* Right MP Crescent */}
-                <div className="taiji-crescent crescent-mp" title={`内力: ${Math.ceil(state.player.mp)} / ${state.player.maxMp}`}>
-                  <div
-                    className="crescent-fill"
-                    style={{ height: `${Math.max(0, Math.min(100, (state.player.mp / state.player.maxMp) * 100))}%` }}
-                  >
-                    <img src={assetUrl('assets/woool/ui/mp_progress.png')} className="crescent-img" alt="MP" />
+                {/* Center Panel: Active Skills & Passives */}
+                <div className="woool-center-slots-panel">
+                  {/* Row 1: 5 Skill Slots */}
+                  <div className="woool-slot-row skills-row">
+                    {state.activeSkills.map((s, idx) => {
+                      const def = WOOWL_SKILLS[s.id];
+                      if (!def) return null;
+                      const maxCd = s.maxCd || def.cooldown || 2.0;
+                      const cdRatio = s.cdTimer > 0 ? Math.min(1, Math.max(0, s.cdTimer / maxCd)) : 0;
+                      const isReady = s.cdTimer <= 0;
+                      const quality = def.quality || 'common';
+                      return (
+                        <div
+                          key={s.id}
+                          className={`woool-slot-box ${isReady ? 'is-ready' : 'is-cooling'} quality-${quality}`}
+                          title={`${def.name} Lv.${s.level}（${getQualityBadge(quality)}，基础冷却 ${def.cooldown} 秒）`}
+                        >
+                          <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
+                          <img src={assetUrl(`assets/woool/skills/${def.iconId}.png`)} className="slot-icon" alt={def.name} />
+                          {s.cdTimer > 0 && (
+                            <>
+                              <div className="skill-cd-mask" style={{ height: `${Math.round(cdRatio * 100)}%` }} />
+                              <span className="skill-cd-timer">{s.cdTimer.toFixed(1)}s</span>
+                            </>
+                          )}
+                          <span className="slot-badge">Lv.{s.level}</span>
+                          <span className={`slot-quality-badge q-${quality}`}>{getQualityBadge(quality)}</span>
+                          <span className="slot-hotkey">{idx + 1}</span>
+                        </div>
+                      );
+                    })}
+                    {Array.from({ length: Math.max(0, 5 - state.activeSkills.length) }).map((_, i) => (
+                      <div key={`empty_s_${i}`} className="woool-slot-box empty">
+                        <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
+                        <span className="slot-hotkey">{state.activeSkills.length + i + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Row 2: 6 Passive Slots */}
+                  <div className="woool-slot-row passives-row">
+                    {state.activePassives.map(p => {
+                      const def = WOOWL_PASSIVES[p.id];
+                      if (!def) return null;
+                      const iconPath = def.iconType === 'item' || def.iconId > 100000
+                        ? `assets/woool/items/${def.iconId}.png`
+                        : `assets/woool/skills/${def.iconId}.png`;
+                      return (
+                        <div key={p.id} className="woool-slot-box passive" title={`${def.name} Lv.${p.level}`}>
+                          <img src={assetUrl('assets/woool/ui/equip_bg.png')} className="slot-frame" alt="" />
+                          <img src={assetUrl(iconPath)} className="slot-icon item-icon" alt={def.name} />
+                          <span className="slot-badge">Lv.{p.level}</span>
+                        </div>
+                      );
+                    })}
+                    {Array.from({ length: Math.max(0, 6 - state.activePassives.length) }).map((_, i) => (
+                      <div key={`empty_p_${i}`} className="woool-slot-box empty passive">
+                        <img src={assetUrl('assets/woool/ui/equip_bg.png')} className="slot-frame" alt="" />
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                {/* Value Text Overlay */}
-                <div className="taiji-label-hp">{Math.ceil(state.player.hp)}</div>
-                <div className="taiji-label-mp">{Math.ceil(state.player.mp)}</div>
               </div>
-
-              {/* Center Panel: Active Skills (Row 1) & Passives / Equipment (Row 2) */}
-              <div className="woool-center-slots-panel">
-                {/* Row 1: 5 Skill Slots */}
-                <div className="woool-slot-row skills-row">
+            </div>
+          ) : (
+            /* MOBILE COMPACT FLOATING DOCK */
+            <div className="mobile-bottom-dock">
+              <div className="mobile-dock-inner">
+                {/* Compact Skills Carousel */}
+                <div className="mobile-skills-row">
                   {state.activeSkills.map((s, idx) => {
                     const def = WOOWL_SKILLS[s.id];
                     if (!def) return null;
@@ -344,60 +487,46 @@ export function App() {
                     return (
                       <div
                         key={s.id}
-                        className={`woool-slot-box ${isReady ? 'is-ready' : 'is-cooling'} quality-${quality}`}
-                        title={`${def.name} Lv.${s.level}（${getQualityBadge(quality)}，基础冷却 ${def.cooldown} 秒）`}
+                        className={`mobile-skill-slot ${isReady ? 'is-ready' : 'is-cooling'} quality-${quality}`}
                       >
-                        <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
-                        <img src={assetUrl(`assets/woool/skills/${def.iconId}.png`)} className="slot-icon" alt={def.name} />
+                        <img src={assetUrl(`assets/woool/skills/${def.iconId}.png`)} className="mobile-slot-icon" alt={def.name} />
                         {s.cdTimer > 0 && (
                           <>
-                            <div className="skill-cd-mask" style={{ height: `${Math.round(cdRatio * 100)}%` }} />
-                            <span className="skill-cd-timer">{s.cdTimer.toFixed(1)}s</span>
+                            <div className="mobile-cd-mask" style={{ height: `${Math.round(cdRatio * 100)}%` }} />
+                            <span className="mobile-cd-text">{s.cdTimer.toFixed(1)}</span>
                           </>
                         )}
-                        <span className="slot-badge">Lv.{s.level}</span>
-                        <span className={`slot-quality-badge q-${quality}`}>{getQualityBadge(quality)}</span>
-                        <span className="slot-hotkey">{idx + 1}</span>
+                        <span className="mobile-lvl-pill">{s.level}</span>
                       </div>
                     );
                   })}
-                  {Array.from({ length: Math.max(0, 5 - state.activeSkills.length) }).map((_, i) => (
-                    <div key={`empty_s_${i}`} className="woool-slot-box empty">
-                      <img src={assetUrl('assets/woool/ui/item_bg.png')} className="slot-frame" alt="" />
-                      <span className="slot-hotkey">{state.activeSkills.length + i + 1}</span>
-                    </div>
-                  ))}
                 </div>
 
-                {/* Row 2: 6 Passive / Equipment Slots */}
-                <div className="woool-slot-row passives-row">
-                  {state.activePassives.map(p => {
-                    const def = WOOWL_PASSIVES[p.id];
-                    if (!def) return null;
-                    const iconPath = def.iconType === 'item' || def.iconId > 100000
-                      ? `assets/woool/items/${def.iconId}.png`
-                      : `assets/woool/skills/${def.iconId}.png`;
-                    return (
-                      <div key={p.id} className="woool-slot-box passive" title={`${def.name} Lv.${p.level}`}>
-                        <img src={assetUrl('assets/woool/ui/equip_bg.png')} className="slot-frame" alt="" />
-                        <img src={assetUrl(iconPath)} className="slot-icon item-icon" alt={def.name} />
-                        <span className="slot-badge">Lv.{p.level}</span>
-                      </div>
-                    );
-                  })}
-                  {Array.from({ length: Math.max(0, 6 - state.activePassives.length) }).map((_, i) => (
-                    <div key={`empty_p_${i}`} className="woool-slot-box empty passive">
-                      <img src={assetUrl('assets/woool/ui/equip_bg.png')} className="slot-frame" alt="" />
-                    </div>
-                  ))}
-                </div>
+                {/* Passive Buffs Row */}
+                {state.activePassives.length > 0 && (
+                  <div className="mobile-passives-row">
+                    {state.activePassives.map(p => {
+                      const def = WOOWL_PASSIVES[p.id];
+                      if (!def) return null;
+                      const iconPath = def.iconType === 'item' || def.iconId > 100000
+                        ? `assets/woool/items/${def.iconId}.png`
+                        : `assets/woool/skills/${def.iconId}.png`;
+                      return (
+                        <div key={p.id} className="mobile-passive-pill" title={`${def.name} Lv.${p.level}`}>
+                          <img src={assetUrl(iconPath)} className="mobile-passive-icon" alt={def.name} />
+                          <span className="passive-lvl">L{p.level}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* 3. LEVEL UP MODAL (AUTHENTIC WOOOL STYLE) */}
+      {/* 3. LEVEL UP MODAL */}
       {state.phase === 'level_up' && (
         <div className="modal-backdrop">
           <div className="upgrade-dialog-woool">
