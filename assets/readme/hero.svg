@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="360" viewBox="0 0 1200 360"
+     role="img" aria-labelledby="title desc">
+  <title id="title">传奇世界幸存者 Woool Survivor — 战法道三职业 2.5D 复古肉鸽割草：六大城镇要塞，四档难度</title>
+  <desc id="desc">深蓝紫底 2.5D 斜视角标题：传奇世界幸存者；右侧是一块等距菱形地图，上有城墙、塔楼与帐篷，代表六大城镇要塞。</desc>
+
+  <rect width="1200" height="360" rx="26" fill="#16121e"/>
+
+  <g id="title-block" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <text x="56" y="62" font-size="19" letter-spacing="3" fill="#b8a8d8">2.5D 复古肉鸽割草 · ISOMETRIC ROGUELITE SURVIVOR</text>
+    <text x="56" y="128" font-size="62" font-weight="700" fill="#e8c97a">传奇世界幸存者</text>
+    <text x="56" y="168" font-size="23" fill="#efe8f5">WOOL SURVIVOR — 战法道三职业，六大城镇要塞</text>
+    <text x="56" y="204" font-size="19" fill="#b8a8d8">原版帧动画技能特效，四档难度曲线，每章 20 分钟。</text>
+    <g id="chips" font-size="18" fill="#efe8f5" text-anchor="middle">
+      <g><rect x="56" y="238" width="126" height="36" rx="18" fill="#241c33" stroke="#4a3a66" stroke-width="1.5"/><text x="119" y="262">23 项技能</text></g>
+      <g><rect x="194" y="238" width="126" height="36" rx="18" fill="#241c33" stroke="#4a3a66" stroke-width="1.5"/><text x="257" y="262">6 章地图</text></g>
+      <g><rect x="332" y="238" width="126" height="36" rx="18" fill="#241c33" stroke="#4a3a66" stroke-width="1.5"/><text x="395" y="262">8 种魔物</text></g>
+      <g><rect x="470" y="238" width="126" height="36" rx="18" fill="#241c33" stroke="#4a3a66" stroke-width="1.5"/><text x="533" y="262">4 档难度</text></g>
+    </g>
+  </g>
+
+  <g id="iso-map" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <!-- isometric diamond tile -->
+    <g>
+      <polygon points="960,52 1156,150 960,248 764,150" fill="#2a2138" stroke="#4a3a66" stroke-width="2"/>
+      <polygon points="960,52 1156,150 960,248 764,150" fill="none" stroke="#5a4a7a" stroke-width="1" opacity="0.5"/>
+      <polygon points="960,86 1108,162 960,238 812,162" fill="#33284a"/>
+      <polygon points="960,86 1108,162 960,238 812,162" fill="none" stroke="#5a4a7a" stroke-width="1"/>
+      <!-- ground texture: sand patches -->
+      <polygon points="830,150 880,124 910,140 860,168" fill="#4a3a28" opacity="0.8"/>
+      <polygon points="1040,140 1090,164 1060,186 1016,162" fill="#3a2e22" opacity="0.8"/>
+    </g>
+    <!-- tower -->
+    <g>
+      <rect x="944" y="84" width="32" height="56" fill="#6a5a3a"/>
+      <polygon points="940,86 976,86 960,62" fill="#a83232"/>
+      <rect x="952" y="112" width="16" height="28" fill="#241c33"/>
+      <rect x="950" y="96" width="8" height="8" fill="#e8c97a"/>
+      <rect x="962" y="96" width="8" height="8" fill="#e8c97a"/>
+    </g>
+    <!-- tents -->
+    <g>
+      <polygon points="830,150 862,150 846,126" fill="#c9b896"/>
+      <polygon points="830,150 846,126 846,150" fill="#a89a7a"/>
+      <polygon points="1058,166 1090,166 1074,142" fill="#c9b896"/>
+      <polygon points="1058,166 1074,142 1074,166" fill="#a89a7a"/>
+    </g>
+    <!-- hero dot + monsters -->
+    <g>
+      <circle cx="960" cy="196" r="9" fill="#4a90d9" stroke="#efe8f5" stroke-width="2"/>
+      <circle cx="912" cy="178" r="6" fill="#c0392b"/>
+      <circle cx="1008" cy="182" r="6" fill="#c0392b"/>
+      <circle cx="986" cy="210" r="6" fill="#c0392b"/>
+    </g>
+    <!-- fireball arc -->
+    <g>
+      <circle cx="930" cy="160" r="7" fill="#e86a2a"/>
+      <circle cx="934" cy="157" r="3.5" fill="#ffe08a"/>
+    </g>
+    <text x="960" y="292" font-size="18" fill="#efe8f5" text-anchor="middle">六大城镇要塞 · 每章 20 分钟</text>
+    <text x="960" y="318" font-size="18" fill="#b8a8d8" text-anchor="middle">落霞岛 — 中州 — 热砂 — 死水 — 苍月 — 铁血</text>
+  </g>
+</svg>
