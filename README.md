@@ -1,25 +1,25 @@
+<p align="right"><a href="README.en.md">English</a></p>
+
 <p align="center">
   <img src="./assets/readme/hero.svg" width="100%" alt="传奇世界幸存者 Woool Survivor — 战法道三职业 2.5D 复古肉鸽割草：六大城镇要塞，四档难度">
 </p>
 
 <p align="center">
-  <a href="https://xiaosang.cc/woool-survivor-game/">▶ 在线玩 Play Online</a>
+  <a href="https://xiaosang.cc/woool-survivor-game/">▶ 在线玩</a>
   ·
   <a href="https://github.com/holynova/woool-survivor-game">GitHub 仓库</a>
 </p>
 
 传奇世界幸存者是一款基于经典端游《传奇世界》美术资产的 2.5D 复古肉鸽割草游戏：战士、法师、道士三职业，23 项技能配原版帧动画特效，在六大写实城镇要塞里迎战怪潮，四档难度从逍遥割草到铁血炼狱。React + Phaser 3 驱动，桌面端游玩。
 
-Woool Survivor is a retro 2.5D isometric roguelite survivor built with authentic The World of Legend (Woool) visual assets: Warrior, Wizard and Taoist, 23 skills with original sprite animations, six illustrated citadel and town maps, and four difficulty curves from casual swarm-clearing to hardcore boss endurance. Built with React + Phaser 3.
-
-## 截图 / Screenshots
+## 截图
 
 <p align="center">
   <img src="./assets/readme/screenshot-game.jpg" width="600" alt="实机战斗：法师在热砂荒漠土城释放雷电与火球，击杀目标 0/8">
   <img src="./assets/readme/screenshot-map.jpg" width="600" alt="章节地图：落霞岛桃林原野，写实城镇要塞原画">
 </p>
 
-## 玩法 / How to Play
+## 玩法
 
 - **三职业**：战士近战剑术（7 项技能）、法师元素魔法（8 项）、道士符箓召唤（8 项），各有专属技能池。
 - **六大章节**：落霞岛桃林原野、中州王城近郊、热砂荒漠戈壁、死水沼泽禁地、玄冰雪原极地、铁血魔渊熔岩；每章 20 分钟，击杀目标 600–1600 递增，章末 Boss 血量 12,000–52,000。
@@ -27,7 +27,7 @@ Woool Survivor is a retro 2.5D isometric roguelite survivor built with authentic
 - **构筑**：23 项技能 + 6 件被动宝物（传世神兵玄晶、风雷神行步、天山雪莲玉髓、深渊魔晶珠、太极洗髓金丹、玛法乾坤引力石）。
 - **8 种魔物**：稻草人、狂暴角鹿、剧毒蟒蛇、红野猪、妖化刀犬、白骨骷髅、双斧骷髅将、赤炎兽傀儡。
 
-## 本地运行 / Run Locally
+## 本地运行
 
 ```bash
 npm install
@@ -40,7 +40,7 @@ npm run dev
 npm test
 ```
 
-## 技术 / Tech
+## 技术
 
 - React 19（界面）+ Phaser 3.90（2.5D 等距战斗渲染）+ TypeScript + Vite。
 - 数据驱动：章节、技能、难度曲线分别定义在 `src/config/`（`chapters.ts` / `skills.ts` / `curves.ts`）；原版精灵图集（plist + PNG）与技能特效帧动画在 `public/assets/woool/`。
@@ -58,17 +58,6 @@ public/assets/woool/    传奇世界原版美术资产（精灵 / 地图 / 特�
 tests/simulate_curves.mjs  难度曲线离线模拟
 ```
 
-## English
+## 声明
 
-**Woool Survivor** is a retro 2.5D isometric roguelite survivor built with authentic The World of Legend (Woool) visual assets.
-
-- **Three classes**: Warrior (7 melee skills), Wizard (8 elemental spells), Taoist (8 talismans and summons), each with its own skill pool.
-- **Six chapters**: Sunset Isle, Central State, Hot Desert, Deadwater Marsh, Frozen Citadel, Iron Citadel — 20 minutes each, kill targets rising from 600 to 1,600, chapter bosses from 12,000 to 52,000 HP.
-- **Four difficulty curves**: Casual, Standard, Surge and Hell, each with its own spawn density and intensity.
-- **Builds**: 23 skills plus 6 passive relics, all with original sprite skill animations.
-- **Run it**: `npm install && npm run dev`. Curve simulation: `npm test`.
-- **Tech**: React 19 UI + Phaser 3.90 isometric combat rendering + TypeScript + Vite; data-driven chapters, skills and curves in `src/config/`; original Woool sprite atlases under `public/assets/woool/`.
-
-## 声明 / Disclaimer
-
-本仓库使用《传奇世界》风格美术资产做非官方二次创作，与盛趣游戏无关；本仓库未声明整体开源协议。Unofficial fan work using Woool-style art assets, not affiliated with Shanda Games.
+本仓库使用《传奇世界》风格美术资产做非官方二次创作，与盛趣游戏无关；本仓库未声明整体开源协议。
